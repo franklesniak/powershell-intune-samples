@@ -311,10 +311,22 @@ $global:authToken = Get-AuthToken -User $User
 
 ####################################################
 
-If (Test-Path -Path $FileName -Type Leaf) {
-	$ImportPath = $FileName
-} Else {
-	$ImportPath = Read-Host -Prompt "Please specify a path to a JSON file to import data from e.g. C:\IntuneOutput\Policies\policy.json"
+$ImportPath = $null
+if ([string]::IsNullOrEmpty($FileName) -eq $false) {
+    if (Test-Path -Path $FileName -Type Leaf) {
+        $ImportPath = $FileName
+    }
+}
+while ($null -eq $ImportPath) {
+    $FileName = Read-Host -Prompt 'Please specify a path to a JSON file to import data from e.g. C:\IntuneOutput\Policies\policy.json'
+    if ([string]::IsNullOrEmpty($FileName) -eq $false) {
+        if (Test-Path -Path $FileName -Type Leaf) {
+            $ImportPath = $FileName
+        }
+    }
+    if ($null -eq $ImportPath) {
+        Write-Warning 'Invalid path! Please try again...'
+    }
 }
 
 # Replacing quotes for Test-Path
