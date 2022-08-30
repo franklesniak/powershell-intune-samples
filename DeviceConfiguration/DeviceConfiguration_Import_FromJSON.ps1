@@ -129,7 +129,7 @@ function Get-AuthToken {
 
 ####################################################
 
-function Add-DeviceConfigurationPolicy() {
+function Add-DeviceConfigurationPolicy {
     <#
     .SYNOPSIS
     This function is used to add an device configuration policy using the Graph API REST interface
@@ -177,7 +177,7 @@ function Add-DeviceConfigurationPolicy() {
 
 ####################################################
 
-function Test-JSON() {
+function Test-JSON {
     <#
     .SYNOPSIS
     This function is used to test if the JSON passed to a REST Post request is valid
