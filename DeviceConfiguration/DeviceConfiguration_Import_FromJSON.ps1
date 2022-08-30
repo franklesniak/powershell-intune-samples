@@ -39,12 +39,12 @@ function Get-AuthToken {
 
     $AadModule = Get-Module -Name "AzureAD" -ListAvailable
 
-    if ($AadModule -eq $null) {
+    if ($null -eq $AadModule) {
         Write-Host "AzureAD PowerShell module not found, looking for AzureADPreview"
         $AadModule = Get-Module -Name "AzureADPreview" -ListAvailable
     }
 
-    if ($AadModule -eq $null) {
+    if ($null -eq $AadModule) {
         Write-Host
         Write-Host "AzureAD Powershell module not installed..." -ForegroundColor Red
         Write-Host "Install by running 'Install-Module AzureAD' or 'Install-Module AzureADPreview' from an elevated PowerShell prompt" -ForegroundColor Yellow
@@ -153,7 +153,7 @@ function Add-DeviceConfigurationPolicy {
     Write-Verbose "Resource: $DCP_resource"
 
     try {
-        if ($JSON -eq "" -or $JSON -eq $null) {
+        if ($JSON -eq "" -or $null -eq $JSON) {
             Write-Host "No JSON specified, please specify valid JSON for the Device Configuration Policy..." -ForegroundColor Red
         } else {
             Test-JSON -JSON $JSON
@@ -229,7 +229,7 @@ if ($global:authToken) {
 
         # Defining User Principal Name if not present
 
-        if ($User -eq $null -or $User -eq "") {
+        if ($null -eq $User -or $User -eq "") {
             $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
             Write-Host
         }
@@ -239,7 +239,7 @@ if ($global:authToken) {
 } else {
     # Authentication doesn't exist, calling Get-AuthToken function
 
-    if ($User -eq $null -or $User -eq "") {
+    if ($null -eq $User -or $User -eq "") {
         $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
         Write-Host
     }
