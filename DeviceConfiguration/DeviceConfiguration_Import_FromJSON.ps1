@@ -153,7 +153,7 @@ function Add-DeviceConfigurationPolicy {
     Write-Verbose "Resource: $DCP_resource"
 
     try {
-        if ($JSON -eq "" -or $null -eq $JSON) {
+        if ([string]::IsNullOrEmpty($JSON)) {
             Write-Host "No JSON specified, please specify valid JSON for the Device Configuration Policy..." -ForegroundColor Red
         } else {
             Test-JSON -JSON $JSON
@@ -175,8 +175,9 @@ function Add-DeviceConfigurationPolicy {
     }
 }
 
-####################################################
+#region DefineTestJSONIfNotAlreadyDefined ##########################################
 
+$strTestJSONFunctionDefinition = @'
 function Test-JSON {
     <#
     .SYNOPSIS
@@ -207,8 +208,19 @@ function Test-JSON {
         break
     }
 }
+'@
 
-####################################################
+$scriptBlockTestJSONFunctionDefinition = [scriptblock]::Create($strTestJSONFunctionDefinition)
+
+$arrTestJSONCommands = @(Get-Command -Name 'Test-JSON' -ErrorAction SilentlyContinue)
+
+if ($arrTestJSONCommands.Count -eq 0) {
+    # Test-JSON function is not defined
+    # Run the scriptblock in the current context
+    . $scriptBlockTestJSONFunctionDefinition
+}
+
+#endregion DefineTestJSONIfNotAlreadyDefined ##########################################
 
 #region Authentication
 
@@ -229,7 +241,7 @@ if ($global:authToken) {
 
         # Defining User Principal Name if not present
 
-        if ($null -eq $User -or $User -eq "") {
+        if ([string]::IsNullOrEmpty($User)) {
             $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
             Write-Host
         }
