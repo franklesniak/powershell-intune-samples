@@ -236,13 +236,13 @@ if ($global:hashtableAuthToken) {
     $intMinutesSinceTokenExpiration = ($datetimeUTC - $hashtableAuthToken.ExpiresOn.Datetime).Minutes
 
     if ($intMinutesSinceTokenExpiration -ge 0) {
-        Write-Host ("Authentication Token expired " + $intMinutesSinceTokenExpiration + " minutes ago") -ForegroundColor Yellow
+        Write-Host ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago') -ForegroundColor Yellow
         Write-Host
 
         # Defining User Principal Name if not present
 
         if ([string]::IsNullOrEmpty($strUPN)) {
-            $strUPN = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+            $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure Authentication'
             Write-Host
         }
 
@@ -252,7 +252,7 @@ if ($global:hashtableAuthToken) {
     # Authentication doesn't exist, calling Get-AuthToken function
 
     if ([string]::IsNullOrEmpty($strUPN)) {
-        $strUPN = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+        $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure Authentication'
         Write-Host
     }
 
@@ -285,16 +285,16 @@ while ($null -eq $strImportPath) {
 # Replacing quotes for Test-Path
 $strImportPath = $strImportPath.Replace('"', '')
 
-if (!(Test-Path "$strImportPath")) {
-    Write-Host "Import Path for JSON file doesn't exist..." -ForegroundColor Red
-    Write-Host "Script can't continue..." -ForegroundColor Red
+if (!(Test-Path $strImportPath)) {
+    Write-Host 'Import Path for JSON file does not exist...' -ForegroundColor Red
+    Write-Host 'Script cannot continue...' -ForegroundColor Red
     Write-Host
     break
 }
 
 ####################################################
 
-$strJSON = Get-Content "$strImportPath"
+$strJSON = Get-Content $strImportPath
 
 # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
 $pscustomobjectConvertedJSON = $strJSON | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id, createdDateTime, lastModifiedDateTime, version, supportsScopeTags
@@ -304,9 +304,9 @@ $strDisplayName = $pscustomobjectConvertedJSON.displayName
 $JSONOutput = $pscustomobjectConvertedJSON | ConvertTo-Json -Depth 5
 
 Write-Host
-Write-Host "Device Configuration Policy '$strDisplayName' Found..." -ForegroundColor Yellow
+Write-Host ('Device Configuration Policy "' + $strDisplayName + '" Found...') -ForegroundColor Yellow
 Write-Host
 $JSONOutput
 Write-Host
-Write-Host "Adding Device Configuration Policy '$strDisplayName'" -ForegroundColor Yellow
+Write-Host ('Adding Device Configuration Policy "' + $strDisplayName + '"') -ForegroundColor Yellow
 Add-DeviceConfigurationPolicy -JSON $JSONOutput
