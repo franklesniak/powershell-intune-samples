@@ -32,24 +32,24 @@ function Get-AuthToken {
         $strUPN
     )
 
-    $mailaddressUserUPN = New-Object "System.Net.Mail.MailAddress" -ArgumentList $strUPN
+    $mailaddressUserUPN = New-Object 'System.Net.Mail.MailAddress' -ArgumentList $strUPN
 
     $strDomainName = $mailaddressUserUPN.Host
 
-    Write-Host "Checking for AzureAD module..."
+    Write-Host 'Checking for AzureAD module...'
 
-    $arrModuleAzureAD = @(Get-Module -Name "AzureAD" -ListAvailable)
+    $arrModuleAzureAD = @(Get-Module -Name 'AzureAD' -ListAvailable)
 
     if ($arrModuleAzureAD.Count -eq 0) {
-        Write-Host "AzureAD PowerShell module not found, looking for AzureADPreview"
-        $arrModuleAzureAD = @(Get-Module -Name "AzureADPreview" -ListAvailable)
+        Write-Host 'AzureAD PowerShell module not found, looking for AzureADPreview'
+        $arrModuleAzureAD = @(Get-Module -Name 'AzureADPreview' -ListAvailable)
     }
 
     if ($arrModuleAzureAD.Count -eq 0) {
         Write-Host
-        Write-Host "AzureAD Powershell module not installed..." -ForegroundColor Red
-        Write-Host "Install by running 'Install-Module AzureAD' or 'Install-Module AzureADPreview' from an elevated PowerShell prompt" -ForegroundColor Yellow
-        Write-Host "Script can't continue..." -ForegroundColor Red
+        Write-Host 'AzureAD Powershell module not installed...' -ForegroundColor Red
+        Write-Host 'Install by running "Install-Module AzureAD" or "Install-Module AzureADPreview" from an elevated PowerShell prompt' -ForegroundColor Yellow
+        Write-Host 'Script cannot continue...' -ForegroundColor Red
         Write-Host
         exit
     }
@@ -74,30 +74,30 @@ function Get-AuthToken {
         $moduleAzureAD = $arrModuleAzureAD[0]
     }
 
-    $strPathToADALDLL = Join-Path $moduleAzureAD.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
-    $strPathToADALFormsDLL = Join-Path $moduleAzureAD.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll"
+    $strPathToADALDLL = Join-Path $moduleAzureAD.ModuleBase 'Microsoft.IdentityModel.Clients.ActiveDirectory.dll'
+    $strPathToADALFormsDLL = Join-Path $moduleAzureAD.ModuleBase 'Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll'
 
     [System.Reflection.Assembly]::LoadFrom($strPathToADALDLL) | Out-Null
 
     [System.Reflection.Assembly]::LoadFrom($strPathToADALFormsDLL) | Out-Null
 
-    $strMicrosoftIntunePowerShellAppID = "d1ddf0e4-d672-4dae-b554-9d5bdfd93547"
+    $strMicrosoftIntunePowerShellAppID = 'd1ddf0e4-d672-4dae-b554-9d5bdfd93547'
 
-    $strRedirectURI = "urn:ietf:wg:oauth:2.0:oob"
+    $strRedirectURI = 'urn:ietf:wg:oauth:2.0:oob'
 
-    $strResourceAppIDURI = "https://graph.microsoft.com"
+    $strResourceAppIDURI = 'https://graph.microsoft.com'
 
-    $strAuthority = "https://login.microsoftonline.com/$strDomainName"
+    $strAuthority = ('https://login.microsoftonline.com/' + $strDomainName)
 
     try {
-        $authenticationcontext = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext" -ArgumentList $strAuthority
+        $authenticationcontext = New-Object 'Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext' -ArgumentList $strAuthority
 
         # https://msdn.microsoft.com/en-us/library/azure/microsoft.identitymodel.clients.activedirectory.promptbehavior.aspx
         # Change the prompt behaviour to force credentials each time: Auto, Always, Never, RefreshSession
 
-        $platformparameters = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters" -ArgumentList "Auto"
+        $platformparameters = New-Object 'Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters' -ArgumentList 'Auto'
 
-        $useridentifier = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier" -ArgumentList ($strUPN, "OptionalDisplayableId")
+        $useridentifier = New-Object 'Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier' -ArgumentList ($strUPN, 'OptionalDisplayableId')
 
         $authResult = $authenticationcontext.AcquireTokenAsync($strResourceAppIDURI, $strMicrosoftIntunePowerShellAppID, $strRedirectURI, $platformparameters, $useridentifier).Result
 
@@ -115,7 +115,7 @@ function Get-AuthToken {
             return $authHeader
         } else {
             Write-Host
-            Write-Host "Authorization Access Token is null, please re-run authentication..." -ForegroundColor Red
+            Write-Host 'Authorization Access Token is null, please re-run authentication...' -ForegroundColor Red
             Write-Host
             break
         }
