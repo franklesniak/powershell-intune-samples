@@ -250,7 +250,7 @@ if ($global:authToken) {
 } else {
     # Authentication doesn't exist, calling Get-AuthToken function
 
-    if ($null -eq $user -or $user -eq "") {
+    if ([string]::IsNullOrEmpty($user)) {
         $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
         Write-Host
     }
