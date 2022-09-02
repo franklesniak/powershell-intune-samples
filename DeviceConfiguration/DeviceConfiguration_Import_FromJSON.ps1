@@ -148,20 +148,20 @@ function Add-DeviceConfigurationPolicy {
         $strJSON
     )
 
-    $strGraphAPIVersion = "Beta"
-    $strDCPResource = "deviceManagement/deviceConfigurations"
-    Write-Verbose "Resource: $strDCPResource"
+    $strGraphAPIVersion = 'Beta'
+    $strDCPResource = 'deviceManagement/deviceConfigurations'
+    Write-Verbose ('Resource: ' + $strDCPResource)
 
     try {
         if ([string]::IsNullOrEmpty($strJSON)) {
-            Write-Host "No JSON specified, please specify valid JSON for the Device Configuration Policy..." -ForegroundColor Red
+            Write-Host 'No JSON specified, please specify valid JSON for the Device Configuration Policy...' -ForegroundColor Red
         } else {
             $boolResult = Test-JSON -JSON $strJSON
             if ($boolResult) {
-                $strURI = "https://graph.microsoft.com/$strGraphAPIVersion/$($strDCPResource)"
-                Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Post -Body $strJSON -ContentType "application/json"
+                $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
+                Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Post -Body $strJSON -ContentType 'application/json'
             } else {
-                Write-Host "JSON is not valid, please specify valid JSON for the Device Configuration Policy..." -ForegroundColor Red
+                Write-Host 'JSON is not valid, please specify valid JSON for the Device Configuration Policy...' -ForegroundColor Red
             }
         }
     } catch {
@@ -171,8 +171,8 @@ function Add-DeviceConfigurationPolicy {
         $reader.BaseStream.Position = 0
         $reader.DiscardBufferedData()
         $responseBody = $reader.ReadToEnd();
-        Write-Host "Response content:`n$responseBody" -ForegroundColor Red
-        Write-Error "Request to $strURI failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+        Write-Host ('Response content:' + "`n" + $responseBody) -ForegroundColor Red
+        Write-Error ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription)
         Write-Host
         break
     }
