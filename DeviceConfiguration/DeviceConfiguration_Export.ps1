@@ -11,31 +11,31 @@ See LICENSE in the project root for license information.
 
 function Get-AuthToken {
 
-<#
-.SYNOPSIS
-This function is used to authenticate with the Graph API REST interface
-.DESCRIPTION
-The function authenticate with the Graph API Interface with the tenant name
-.EXAMPLE
-Get-AuthToken
-Authenticates you with the Graph API interface
-.NOTES
-NAME: Get-AuthToken
-#>
+    <#
+    .SYNOPSIS
+    This function is used to authenticate with the Graph API REST interface
+    .DESCRIPTION
+    The function authenticate with the Graph API Interface with the tenant name
+    .EXAMPLE
+    Get-AuthToken
+    Authenticates you with the Graph API interface
+    .NOTES
+    NAME: Get-AuthToken
+    #>
 
-[cmdletbinding()]
+    [cmdletbinding()]
 
-param
-(
-    [Parameter(Mandatory=$true)]
-    $User
-)
+    param
+    (
+        [Parameter(Mandatory=$true)]
+        $User
+    )
 
-$userUpn = New-Object "System.Net.Mail.MailAddress" -ArgumentList $User
+    $userUpn = New-Object "System.Net.Mail.MailAddress" -ArgumentList $User
 
-$tenant = $userUpn.Host
+    $tenant = $userUpn.Host
 
-Write-Host "Checking for AzureAD module..."
+    Write-Host "Checking for AzureAD module..."
 
     $AadModule = Get-Module -Name "AzureAD" -ListAvailable
 
@@ -55,8 +55,8 @@ Write-Host "Checking for AzureAD module..."
         exit
     }
 
-# Getting path to ActiveDirectory Assemblies
-# If the module count is greater than 1 find the latest version
+    # Getting path to ActiveDirectory Assemblies
+    # If the module count is greater than 1 find the latest version
 
     if($AadModule.count -gt 1){
 
@@ -84,53 +84,53 @@ Write-Host "Checking for AzureAD module..."
 
     }
 
-[System.Reflection.Assembly]::LoadFrom($adal) | Out-Null
+    [System.Reflection.Assembly]::LoadFrom($adal) | Out-Null
 
-[System.Reflection.Assembly]::LoadFrom($adalforms) | Out-Null
+    [System.Reflection.Assembly]::LoadFrom($adalforms) | Out-Null
 
-$clientId = "d1ddf0e4-d672-4dae-b554-9d5bdfd93547"
+    $clientId = "d1ddf0e4-d672-4dae-b554-9d5bdfd93547"
 
-$redirectUri = "urn:ietf:wg:oauth:2.0:oob"
+    $redirectUri = "urn:ietf:wg:oauth:2.0:oob"
 
-$resourceAppIdURI = "https://graph.microsoft.com"
+    $resourceAppIdURI = "https://graph.microsoft.com"
 
-$authority = "https://login.microsoftonline.com/$Tenant"
+    $authority = "https://login.microsoftonline.com/$Tenant"
 
     try {
 
-    $authContext = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext" -ArgumentList $authority
+        $authContext = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext" -ArgumentList $authority
 
-    # https://msdn.microsoft.com/en-us/library/azure/microsoft.identitymodel.clients.activedirectory.promptbehavior.aspx
-    # Change the prompt behaviour to force credentials each time: Auto, Always, Never, RefreshSession
+        # https://msdn.microsoft.com/en-us/library/azure/microsoft.identitymodel.clients.activedirectory.promptbehavior.aspx
+        # Change the prompt behaviour to force credentials each time: Auto, Always, Never, RefreshSession
 
-    $platformParameters = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters" -ArgumentList "Auto"
+        $platformParameters = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters" -ArgumentList "Auto"
 
-    $userId = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier" -ArgumentList ($User, "OptionalDisplayableId")
+        $userId = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier" -ArgumentList ($User, "OptionalDisplayableId")
 
-    $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI,$clientId,$redirectUri,$platformParameters,$userId).Result
+        $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI,$clientId,$redirectUri,$platformParameters,$userId).Result
 
         # If the accesstoken is valid then create the authentication header
 
         if($authResult.AccessToken){
 
-        # Creating header for Authorization token
+            # Creating header for Authorization token
 
-        $authHeader = @{
-            'Content-Type'='application/json'
-            'Authorization'="Bearer " + $authResult.AccessToken
-            'ExpiresOn'=$authResult.ExpiresOn
+            $authHeader = @{
+                'Content-Type'='application/json'
+                'Authorization'="Bearer " + $authResult.AccessToken
+                'ExpiresOn'=$authResult.ExpiresOn
             }
 
-        return $authHeader
+            return $authHeader
 
         }
 
         else {
 
-        Write-Host
-        Write-Host "Authorization Access Token is null, please re-run authentication..." -ForegroundColor Red
-        Write-Host
-        break
+            Write-Host
+            Write-Host "Authorization Access Token is null, please re-run authentication..." -ForegroundColor Red
+            Write-Host
+            break
 
         }
 
@@ -138,10 +138,10 @@ $authority = "https://login.microsoftonline.com/$Tenant"
 
     catch {
 
-    write-host $_.Exception.Message -f Red
-    write-host $_.Exception.ItemName -f Red
-    write-host
-    break
+        write-host $_.Exception.Message -f Red
+        write-host $_.Exception.ItemName -f Red
+        write-host
+        break
 
     }
 
@@ -151,42 +151,42 @@ $authority = "https://login.microsoftonline.com/$Tenant"
 
 Function Get-DeviceConfigurationPolicy(){
 
-<#
-.SYNOPSIS
-This function is used to get device configuration policies from the Graph API REST interface
-.DESCRIPTION
-The function connects to the Graph API Interface and gets any device configuration policies
-.EXAMPLE
-Get-DeviceConfigurationPolicy
-Returns any device configuration policies configured in Intune
-.NOTES
-NAME: Get-DeviceConfigurationPolicy
-#>
+    <#
+    .SYNOPSIS
+    This function is used to get device configuration policies from the Graph API REST interface
+    .DESCRIPTION
+    The function connects to the Graph API Interface and gets any device configuration policies
+    .EXAMPLE
+    Get-DeviceConfigurationPolicy
+    Returns any device configuration policies configured in Intune
+    .NOTES
+    NAME: Get-DeviceConfigurationPolicy
+    #>
 
-[cmdletbinding()]
+    [cmdletbinding()]
 
-$graphApiVersion = "Beta"
-$DCP_resource = "deviceManagement/deviceConfigurations"
+    $graphApiVersion = "Beta"
+    $DCP_resource = "deviceManagement/deviceConfigurations"
     
     try {
     
-    $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)"
-    (Invoke-RestMethod -Uri $uri -Headers $authToken -Method Get).Value
+        $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)"
+        (Invoke-RestMethod -Uri $uri -Headers $authToken -Method Get).Value
     
     }
     
     catch {
 
-    $ex = $_.Exception
-    $errorResponse = $ex.Response.GetResponseStream()
-    $reader = New-Object System.IO.StreamReader($errorResponse)
-    $reader.BaseStream.Position = 0
-    $reader.DiscardBufferedData()
-    $responseBody = $reader.ReadToEnd();
-    Write-Host "Response content:`n$responseBody" -f Red
-    Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
-    write-host
-    break
+        $ex = $_.Exception
+        $errorResponse = $ex.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($errorResponse)
+        $reader.BaseStream.Position = 0
+        $reader.DiscardBufferedData()
+        $responseBody = $reader.ReadToEnd();
+        Write-Host "Response content:`n$responseBody" -f Red
+        Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+        write-host
+        break
 
     }
 
@@ -196,24 +196,24 @@ $DCP_resource = "deviceManagement/deviceConfigurations"
 
 Function Export-JSONData(){
 
-<#
-.SYNOPSIS
-This function is used to export JSON data returned from Graph
-.DESCRIPTION
-This function is used to export JSON data returned from Graph
-.EXAMPLE
-Export-JSONData -JSON $JSON
-Export the JSON inputted on the function
-.NOTES
-NAME: Export-JSONData
-#>
+    <#
+    .SYNOPSIS
+    This function is used to export JSON data returned from Graph
+    .DESCRIPTION
+    This function is used to export JSON data returned from Graph
+    .EXAMPLE
+    Export-JSONData -JSON $JSON
+    Export the JSON inputted on the function
+    .NOTES
+    NAME: Export-JSONData
+    #>
 
-param (
+    param (
 
-$JSON,
-$ExportPath
+        $JSON,
+        $ExportPath
 
-)
+    )
 
     try {
 
@@ -252,14 +252,14 @@ $ExportPath
 
             $JSON1 | Set-Content -LiteralPath "$ExportPath\$FileName_JSON"
             write-host "JSON created in $ExportPath\$FileName_JSON..." -f cyan
-            
+
         }
 
     }
 
     catch {
 
-    $_.Exception
+        $_.Exception
 
     }
 
@@ -280,23 +280,23 @@ if($global:authToken){
     # If the authToken exists checking when it expires
     $TokenExpires = ($authToken.ExpiresOn.datetime - $DateTime).Minutes
 
-        if($TokenExpires -le 0){
+    if($TokenExpires -le 0){
 
         write-host "Authentication Token expired" $TokenExpires "minutes ago" -ForegroundColor Yellow
         write-host
 
-            # Defining User Principal Name if not present
+        # Defining User Principal Name if not present
 
-            if($User -eq $null -or $User -eq ""){
+        if($User -eq $null -or $User -eq ""){
 
             $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
             Write-Host
 
-            }
+        }
 
         $global:authToken = Get-AuthToken -User $User
 
-        }
+    }
 }
 
 # Authentication doesn't exist, calling Get-AuthToken function
@@ -305,13 +305,13 @@ else {
 
     if($User -eq $null -or $User -eq ""){
 
-    $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
-    Write-Host
+        $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+        Write-Host
 
     }
 
-# Getting the authorization token
-$global:authToken = Get-AuthToken -User $User
+    # Getting the authorization token
+    $global:authToken = Get-AuthToken -User $User
 
 }
 
@@ -321,32 +321,32 @@ $global:authToken = Get-AuthToken -User $User
 
 $ExportPath = Read-Host -Prompt "Please specify a path to export the policy data to e.g. C:\IntuneOutput"
 
-    # If the directory path doesn't exist prompt user to create the directory
-    $ExportPath = $ExportPath.replace('"','')
+# If the directory path doesn't exist prompt user to create the directory
+$ExportPath = $ExportPath.replace('"','')
 
-    if(!(Test-Path "$ExportPath")){
+if(!(Test-Path "$ExportPath")){
 
     Write-Host
     Write-Host "Path '$ExportPath' doesn't exist, do you want to create this directory? Y or N?" -ForegroundColor Yellow
 
     $Confirm = read-host
 
-        if($Confirm -eq "y" -or $Confirm -eq "Y"){
+    if($Confirm -eq "y" -or $Confirm -eq "Y"){
 
         new-item -ItemType Directory -Path "$ExportPath" | Out-Null
         Write-Host
 
-        }
+    }
 
-        else {
+    else {
 
         Write-Host "Creation of directory path was cancelled..." -ForegroundColor Red
         Write-Host
         break
 
-        }
-
     }
+
+}
 
 ####################################################
 
@@ -356,9 +356,9 @@ Write-Host
 $DCPs = Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne "#microsoft.graph.iosUpdateConfiguration") -and ($_.'@odata.type' -ne "#microsoft.graph.windowsUpdateForBusinessConfiguration") }
 foreach($DCP in $DCPs){
 
-write-host "Device Configuration Policy:"$DCP.displayName -f Yellow
-Export-JSONData -JSON $DCP -ExportPath "$ExportPath"
-Write-Host
+    write-host "Device Configuration Policy:"$DCP.displayName -f Yellow
+    Export-JSONData -JSON $DCP -ExportPath "$ExportPath"
+    Write-Host
 
 }
 
