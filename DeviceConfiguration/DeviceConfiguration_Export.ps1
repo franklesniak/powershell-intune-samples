@@ -175,26 +175,13 @@ function Export-JSONData {
 
     try {
 
-        if($JSON -eq "" -or $JSON -eq $null){
-
+        if ($JSON -eq "" -or $JSON -eq $null) {
             write-host "No JSON specified, please specify valid JSON..." -f Red
-
-        }
-
-        elseif(!$ExportPath){
-
+        } elseif (!$ExportPath) {
             write-host "No export path parameter set, please provide a path to export the file" -f Red
-
-        }
-
-        elseif(!(Test-Path $ExportPath)){
-
+        } elseif (!(Test-Path $ExportPath)) {
             write-host "$ExportPath doesn't exist, can't export JSON Data" -f Red
-
-        }
-
-        else {
-
+        } else {
             $JSON1 = ConvertTo-Json $JSON -Depth 5
 
             $JSON_Convert = $JSON1 | ConvertFrom-Json
@@ -210,17 +197,10 @@ function Export-JSONData {
 
             $JSON1 | Set-Content -LiteralPath "$ExportPath\$FileName_JSON"
             write-host "JSON created in $ExportPath\$FileName_JSON..." -f cyan
-
         }
-
-    }
-
-    catch {
-
+    } catch {
         $_.Exception
-
     }
-
 }
 
 ####################################################
@@ -230,47 +210,37 @@ function Export-JSONData {
 write-host
 
 # Checking if authToken exists before running authentication
-if($global:authToken){
-
+if ($global:authToken) {
     # Setting DateTime to Universal time to work in all timezones
     $DateTime = (Get-Date).ToUniversalTime()
 
     # If the authToken exists checking when it expires
     $TokenExpires = ($authToken.ExpiresOn.datetime - $DateTime).Minutes
 
-    if($TokenExpires -le 0){
-
+    if ($TokenExpires -le 0) {
         write-host "Authentication Token expired" $TokenExpires "minutes ago" -ForegroundColor Yellow
         write-host
 
         # Defining User Principal Name if not present
 
-        if($User -eq $null -or $User -eq ""){
-
+        if ($User -eq $null -or $User -eq "") {
             $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
             Write-Host
-
         }
 
         $global:authToken = Get-AuthToken -User $User
-
     }
-}
+} else {
+    # Authentication doesn't exist, calling Get-AuthToken function
 
-# Authentication doesn't exist, calling Get-AuthToken function
-
-else {
-
-    if($User -eq $null -or $User -eq ""){
+    if ($User -eq $null -or $User -eq "") {
 
         $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
         Write-Host
-
     }
 
     # Getting the authorization token
     $global:authToken = Get-AuthToken -User $User
-
 }
 
 #endregion
@@ -280,30 +250,22 @@ else {
 $ExportPath = Read-Host -Prompt "Please specify a path to export the policy data to e.g. C:\IntuneOutput"
 
 # If the directory path doesn't exist prompt user to create the directory
-$ExportPath = $ExportPath.replace('"','')
+$ExportPath = $ExportPath.replace('"', '')
 
-if(!(Test-Path "$ExportPath")){
-
+if (!(Test-Path "$ExportPath")) {
     Write-Host
     Write-Host "Path '$ExportPath' doesn't exist, do you want to create this directory? Y or N?" -ForegroundColor Yellow
 
     $Confirm = read-host
 
-    if($Confirm -eq "y" -or $Confirm -eq "Y"){
-
+    if ($Confirm -eq "y" -or $Confirm -eq "Y") {
         new-item -ItemType Directory -Path "$ExportPath" | Out-Null
         Write-Host
-
-    }
-
-    else {
-
+    } else {
         Write-Host "Creation of directory path was cancelled..." -ForegroundColor Red
         Write-Host
         break
-
     }
-
 }
 
 ####################################################
@@ -312,12 +274,10 @@ Write-Host
 
 # Filtering out iOS and Windows Software Update Policies
 $DCPs = Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne "#microsoft.graph.iosUpdateConfiguration") -and ($_.'@odata.type' -ne "#microsoft.graph.windowsUpdateForBusinessConfiguration") }
-foreach($DCP in $DCPs){
-
+foreach ($DCP in $DCPs) {
     write-host "Device Configuration Policy:"$DCP.displayName -f Yellow
     Export-JSONData -JSON $DCP -ExportPath "$ExportPath"
     Write-Host
-
 }
 
 Write-Host
