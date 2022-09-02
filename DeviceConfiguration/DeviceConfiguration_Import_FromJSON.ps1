@@ -7,7 +7,7 @@ See LICENSE in the project root for license information.
 
 #>
 [cmdletbinding()]
-param ( [Parameter(Mandatory = $false)][String]$FileName )
+param ( [Parameter(Mandatory = $false)][String]$fileName )
 
 ####################################################
 
@@ -28,7 +28,7 @@ function Get-AuthToken {
 
     param (
         [Parameter(Mandatory = $true)]
-        $User
+        $user
     )
 
     $userUpn = New-Object "System.Net.Mail.MailAddress" -ArgumentList $User
@@ -37,14 +37,14 @@ function Get-AuthToken {
 
     Write-Host "Checking for AzureAD module..."
 
-    $AadModule = Get-Module -Name "AzureAD" -ListAvailable
+    $aadModule = Get-Module -Name "AzureAD" -ListAvailable
 
-    if ($null -eq $AadModule) {
+    if ($null -eq $aadModule) {
         Write-Host "AzureAD PowerShell module not found, looking for AzureADPreview"
-        $AadModule = Get-Module -Name "AzureADPreview" -ListAvailable
+        $aadModule = Get-Module -Name "AzureADPreview" -ListAvailable
     }
 
-    if ($null -eq $AadModule) {
+    if ($null -eq $aadModule) {
         Write-Host
         Write-Host "AzureAD Powershell module not installed..." -ForegroundColor Red
         Write-Host "Install by running 'Install-Module AzureAD' or 'Install-Module AzureADPreview' from an elevated PowerShell prompt" -ForegroundColor Yellow
@@ -56,25 +56,23 @@ function Get-AuthToken {
     # Getting path to ActiveDirectory Assemblies
     # If the module count is greater than 1 find the latest version
 
-    if ($AadModule.count -gt 1) {
+    if ($aadModule.count -gt 1) {
 
-        $Latest_Version = ($AadModule | Select-Object version | Sort-Object)[-1]
+        $latestVersion = ($aadModule | Select-Object Version | Sort-Object)[-1]
 
-        $aadModule = $AadModule | Where-Object { $_.version -eq $Latest_Version.version }
+        $aadModule = $aadModule | Where-Object { $_.Version -eq $latestVersion.version }
 
         # Checking if there are multiple versions of the same module found
 
-        if ($AadModule.count -gt 1) {
-            $aadModule = $AadModule | Select-Object -Unique
+        if ($aadModule.Count -gt 1) {
+            $aadModule = $aadModule | Select-Object -Unique
         }
 
-        $adal = Join-Path $AadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
-        $adalforms = Join-Path $AadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll"
-    }
-
-    else {
-        $adal = Join-Path $AadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
-        $adalforms = Join-Path $AadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll"
+        $adal = Join-Path $aadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
+        $adalforms = Join-Path $aadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll"
+    } else {
+        $adal = Join-Path $aadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
+        $adalforms = Join-Path $aadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll"
     }
 
     [System.Reflection.Assembly]::LoadFrom($adal) | Out-Null
@@ -97,7 +95,7 @@ function Get-AuthToken {
 
         $platformParameters = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters" -ArgumentList "Auto"
 
-        $userId = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier" -ArgumentList ($User, "OptionalDisplayableId")
+        $userId = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier" -ArgumentList ($user, "OptionalDisplayableId")
 
         $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI, $clientId, $redirectUri, $platformParameters, $userId).Result
 
@@ -145,21 +143,21 @@ function Add-DeviceConfigurationPolicy {
     [cmdletbinding()]
 
     param (
-        $JSON
+        $json
     )
 
     $graphApiVersion = "Beta"
-    $DCP_resource = "deviceManagement/deviceConfigurations"
-    Write-Verbose "Resource: $DCP_resource"
+    $dcpResource = "deviceManagement/deviceConfigurations"
+    Write-Verbose "Resource: $dcpResource"
 
     try {
-        if ([string]::IsNullOrEmpty($JSON)) {
+        if ([string]::IsNullOrEmpty($json)) {
             Write-Host "No JSON specified, please specify valid JSON for the Device Configuration Policy..." -ForegroundColor Red
         } else {
-            Test-JSON -JSON $JSON
+            Test-JSON -JSON $json
 
-            $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)"
-            Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $JSON -ContentType "application/json"
+            $uri = "https://graph.microsoft.com/$graphApiVersion/$($dcpResource)"
+            Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $json -ContentType "application/json"
         }
     } catch {
         $ex = $_.Exception
@@ -169,7 +167,7 @@ function Add-DeviceConfigurationPolicy {
         $reader.DiscardBufferedData()
         $responseBody = $reader.ReadToEnd();
         Write-Host "Response content:`n$responseBody" -ForegroundColor Red
-        Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+        Write-Error "Request to $uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
         Write-Host
         break
     }
@@ -177,6 +175,7 @@ function Add-DeviceConfigurationPolicy {
 
 #region DefineTestJSONIfNotAlreadyDefined ##########################################
 
+#TODO: Make Test-JSON return a true/false value instead of just writing a message to the screen
 $strTestJSONFunctionDefinition = @'
 function Test-JSON {
     <#
@@ -185,25 +184,25 @@ function Test-JSON {
     .DESCRIPTION
     The function tests if the JSON passed to the REST Post is valid
     .EXAMPLE
-    Test-JSON -JSON $JSON
+    Test-JSON -JSON $json
     Test if the JSON is valid before calling the Graph REST interface
     .NOTES
     NAME: Test-AuthHeader
     #>
 
     param (
-        $JSON
+        $json
     )
 
     try {
-        $TestJSON = ConvertFrom-Json $JSON -ErrorAction Stop
-        $validJson = $true
+        $testJSON = ConvertFrom-Json $json -ErrorAction Stop
+        $validJSON = $true
     } catch {
-        $validJson = $false
+        $validJSON = $false
         $_.Exception
     }
 
-    if (!$validJson) {
+    if (!$validJSON) {
         Write-Host "Provided JSON isn't in valid JSON format" -f Red
         break
     }
@@ -230,62 +229,62 @@ Write-Host
 if ($global:authToken) {
 
     # Setting DateTime to Universal time to work in all timezones
-    $DateTime = (Get-Date).ToUniversalTime()
+    $datetime = (Get-Date).ToUniversalTime()
 
     # If the authToken exists checking when it expires
-    $TokenExpires = ($authToken.ExpiresOn.datetime - $DateTime).Minutes
+    $tokenExpires = ($authToken.ExpiresOn.Datetime - $datetime).Minutes
 
-    if ($TokenExpires -le 0) {
-        Write-Host "Authentication Token expired" $TokenExpires "minutes ago" -ForegroundColor Yellow
+    if ($tokenExpires -le 0) {
+        Write-Host ("Authentication Token expired" + $tokenExpires + "minutes ago") -ForegroundColor Yellow
         Write-Host
 
         # Defining User Principal Name if not present
 
-        if ([string]::IsNullOrEmpty($User)) {
-            $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+        if ([string]::IsNullOrEmpty($user)) {
+            $user = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
             Write-Host
         }
 
-        $global:authToken = Get-AuthToken -User $User
+        $global:authToken = Get-AuthToken -User $user
     }
 } else {
     # Authentication doesn't exist, calling Get-AuthToken function
 
-    if ($null -eq $User -or $User -eq "") {
+    if ($null -eq $user -or $user -eq "") {
         $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
         Write-Host
     }
 
     # Getting the authorization token
-    $global:authToken = Get-AuthToken -User $User
+    $global:authToken = Get-AuthToken -User $user
 }
 
 #endregion
 
 ####################################################
 
-$ImportPath = $null
-if ([string]::IsNullOrEmpty($FileName) -eq $false) {
-    if (Test-Path -Path $FileName -Type Leaf) {
-        $ImportPath = $FileName
+$importPath = $null
+if ([string]::IsNullOrEmpty($fileName) -eq $false) {
+    if (Test-Path -Path $fileName -Type Leaf) {
+        $importPath = $fileName
     }
 }
-while ($null -eq $ImportPath) {
-    $FileName = Read-Host -Prompt 'Please specify a path to a JSON file to import data from e.g. C:\IntuneOutput\Policies\policy.json'
-    if ([string]::IsNullOrEmpty($FileName) -eq $false) {
-        if (Test-Path -Path $FileName -Type Leaf) {
-            $ImportPath = $FileName
+while ($null -eq $importPath) {
+    $fileName = Read-Host -Prompt 'Please specify a path to a JSON file to import data from e.g. C:\IntuneOutput\Policies\policy.json'
+    if ([string]::IsNullOrEmpty($fileName) -eq $false) {
+        if (Test-Path -Path $fileName -Type Leaf) {
+            $importPath = $fileName
         }
     }
-    if ($null -eq $ImportPath) {
+    if ($null -eq $importPath) {
         Write-Warning 'Invalid path! Please try again...'
     }
 }
 
 # Replacing quotes for Test-Path
-$ImportPath = $ImportPath.replace('"', '')
+$importPath = $importPath.Replace('"', '')
 
-if (!(Test-Path "$ImportPath")) {
+if (!(Test-Path "$importPath")) {
     Write-Host "Import Path for JSON file doesn't exist..." -ForegroundColor Red
     Write-Host "Script can't continue..." -ForegroundColor Red
     Write-Host
@@ -294,19 +293,19 @@ if (!(Test-Path "$ImportPath")) {
 
 ####################################################
 
-$JSON_Data = Get-Content "$ImportPath"
+$jsonData = Get-Content "$importPath"
 
 # Excluding entries that are not required - id,createdDateTime,lastModifiedDateTime,version
-$JSON_Convert = $JSON_Data | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id,createdDateTime,lastModifiedDateTime,version,supportsScopeTags
+$jsonConvert = $jsonData | ConvertFrom-Json | Select-Object -Property * -ExcludeProperty id, createdDateTime, lastModifiedDateTime, version, supportsScopeTags
 
-$DisplayName = $JSON_Convert.displayName
+$displayName = $jsonConvert.displayName
 
-$JSON_Output = $JSON_Convert | ConvertTo-Json -Depth 5
+$jsonOutput = $jsonConvert | ConvertTo-Json -Depth 5
 
 Write-Host
 Write-Host "Device Configuration Policy '$DisplayName' Found..." -ForegroundColor Yellow
 Write-Host
-$JSON_Output
+$jsonOutput
 Write-Host
 Write-Host "Adding Device Configuration Policy '$DisplayName'" -ForegroundColor Yellow
-Add-DeviceConfigurationPolicy -JSON $JSON_Output
+Add-DeviceConfigurationPolicy -JSON $jsonOutput
