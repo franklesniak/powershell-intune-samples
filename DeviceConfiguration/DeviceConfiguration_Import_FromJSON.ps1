@@ -36,21 +36,17 @@ function Get-AuthToken {
 
     $strDomainName = $mailaddressUserUPN.Host
 
-    Write-Host 'Checking for AzureAD module...'
+    Write-Verbose 'Checking for AzureAD module...'
 
     $arrModuleAzureAD = @(Get-Module -Name 'AzureAD' -ListAvailable)
 
     if ($arrModuleAzureAD.Count -eq 0) {
-        Write-Host 'AzureAD PowerShell module not found, looking for AzureADPreview'
+        Write-Verbose 'AzureAD PowerShell module not found, looking for AzureADPreview'
         $arrModuleAzureAD = @(Get-Module -Name 'AzureADPreview' -ListAvailable)
     }
 
     if ($arrModuleAzureAD.Count -eq 0) {
-        Write-Host
-        Write-Host 'AzureAD Powershell module not installed...' -ForegroundColor Red
-        Write-Host 'Install by running "Install-Module AzureAD" or "Install-Module AzureADPreview" from an elevated PowerShell prompt' -ForegroundColor Yellow
-        Write-Host 'Script cannot continue...' -ForegroundColor Red
-        Write-Host
+        Write-Error ('AzureAD Powershell module not installed...' + "`n" + 'Install by running "Install-Module AzureAD" or "Install-Module AzureADPreview" from an elevated PowerShell prompt' + "`n" + 'Script cannot continue...')
         exit
     }
 
@@ -114,15 +110,11 @@ function Get-AuthToken {
 
             return $authHeader
         } else {
-            Write-Host
-            Write-Host 'Authorization Access Token is null, please re-run authentication...' -ForegroundColor Red
-            Write-Host
+            Write-Output 'Error: Authorization Access Token is null, please re-run authentication...'
             break
         }
     } catch {
-        Write-Host $_.Exception.Message -ForegroundColor Red
-        Write-Host $_.Exception.ItemName -ForegroundColor Red
-        Write-Host
+        Write-Output ('An error occurred getting an authorization token: ' + $_.Exception.Message + ' ' + $_.Exception.ItemName)
         break
     }
 }
@@ -154,14 +146,14 @@ function Add-DeviceConfigurationPolicy {
 
     try {
         if ([string]::IsNullOrEmpty($strJSON)) {
-            Write-Host 'No JSON specified, please specify valid JSON for the Device Configuration Policy...' -ForegroundColor Red
+            Write-Output 'Error: No JSON specified, please specify valid JSON for the Device Configuration Policy...'
         } else {
             $boolResult = Test-JSON -JSON $strJSON
             if ($boolResult) {
                 $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
                 Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Post -Body $strJSON -ContentType 'application/json'
             } else {
-                Write-Host 'JSON is not valid, please specify valid JSON for the Device Configuration Policy...' -ForegroundColor Red
+                Write-Output 'Error: JSON is not valid, please specify valid JSON for the Device Configuration Policy...'
             }
         }
     } catch {
@@ -171,9 +163,7 @@ function Add-DeviceConfigurationPolicy {
         $reader.BaseStream.Position = 0
         $reader.DiscardBufferedData()
         $responseBody = $reader.ReadToEnd();
-        Write-Host ('Response content:' + "`n" + $responseBody) -ForegroundColor Red
-        Write-Error ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription)
-        Write-Host
+        Write-Error ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
         break
     }
 }
@@ -224,8 +214,6 @@ if ($arrTestJSONCommands.Count -eq 0) {
 
 #region Authentication
 
-Write-Host
-
 # Checking if hashtableAuthToken exists before running authentication
 if ($global:hashtableAuthToken) {
 
@@ -236,14 +224,12 @@ if ($global:hashtableAuthToken) {
     $intMinutesSinceTokenExpiration = ($datetimeUTC - $hashtableAuthToken.ExpiresOn.Datetime).Minutes
 
     if ($intMinutesSinceTokenExpiration -ge 0) {
-        Write-Host ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago') -ForegroundColor Yellow
-        Write-Host
+        Write-Output ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago')
 
         # Defining User Principal Name if not present
 
         if ([string]::IsNullOrEmpty($strUPN)) {
-            $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure Authentication'
-            Write-Host
+            $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
         }
 
         $global:hashtableAuthToken = Get-AuthToken -User $strUPN
@@ -252,8 +238,7 @@ if ($global:hashtableAuthToken) {
     # Authentication doesn't exist, calling Get-AuthToken function
 
     if ([string]::IsNullOrEmpty($strUPN)) {
-        $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure Authentication'
-        Write-Host
+        $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
     }
 
     # Getting the authorization token
@@ -286,9 +271,7 @@ while ($null -eq $strImportPath) {
 $strImportPath = $strImportPath.Replace('"', '')
 
 if (!(Test-Path $strImportPath)) {
-    Write-Host 'Import Path for JSON file does not exist...' -ForegroundColor Red
-    Write-Host 'Script cannot continue...' -ForegroundColor Red
-    Write-Host
+    Write-Error 'Import Path for JSON file does not exist... script cannot continue!'
     break
 }
 
@@ -303,10 +286,8 @@ $strDisplayName = $pscustomobjectConvertedJSON.displayName
 
 $JSONOutput = $pscustomobjectConvertedJSON | ConvertTo-Json -Depth 5
 
-Write-Host
-Write-Host ('Device Configuration Policy "' + $strDisplayName + '" Found...') -ForegroundColor Yellow
-Write-Host
-$JSONOutput
-Write-Host
-Write-Host ('Adding Device Configuration Policy "' + $strDisplayName + '"') -ForegroundColor Yellow
+Write-Verbose ('Device Configuration Policy "' + $strDisplayName + '" Found...')
+Write-Debug $JSONOutput
+Write-Verbose ('Adding Device Configuration Policy "' + $strDisplayName + '"')
 Add-DeviceConfigurationPolicy -JSON $JSONOutput
+Write-Output ('Done adding Device Configuration Policy "' + $strDisplayName + '"')
