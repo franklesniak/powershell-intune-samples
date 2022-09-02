@@ -154,10 +154,13 @@ function Add-DeviceConfigurationPolicy {
         if ([string]::IsNullOrEmpty($json)) {
             Write-Host "No JSON specified, please specify valid JSON for the Device Configuration Policy..." -ForegroundColor Red
         } else {
-            Test-JSON -JSON $json
-
-            $uri = "https://graph.microsoft.com/$graphApiVersion/$($dcpResource)"
-            Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $json -ContentType "application/json"
+            $boolResult = Test-JSON -JSON $json
+            if ($boolResult) {
+                $uri = "https://graph.microsoft.com/$graphApiVersion/$($dcpResource)"
+                Invoke-RestMethod -Uri $uri -Headers $authToken -Method Post -Body $json -ContentType "application/json"
+            } else {
+                Write-Host "JSON is not valid, please specify valid JSON for the Device Configuration Policy..." -ForegroundColor Red
+            }
         }
     } catch {
         $ex = $_.Exception
@@ -175,7 +178,6 @@ function Add-DeviceConfigurationPolicy {
 
 #region DefineTestJSONIfNotAlreadyDefined ##########################################
 
-#TODO: Make Test-JSON return a true/false value instead of just writing a message to the screen
 $strTestJSONFunctionDefinition = @'
 function Test-JSON {
     <#
@@ -199,13 +201,10 @@ function Test-JSON {
         $validJSON = $true
     } catch {
         $validJSON = $false
-        $_.Exception
+        # $_.Exception
     }
 
-    if (!$validJSON) {
-        Write-Host "Provided JSON isn't in valid JSON format" -f Red
-        break
-    }
+    return $validJSON
 }
 '@
 
