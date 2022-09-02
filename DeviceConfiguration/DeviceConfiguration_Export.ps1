@@ -138,7 +138,7 @@ function Get-DeviceConfigurationPolicy {
 
     try {
         $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)"
-        (Invoke-RestMethod -Uri $uri -Headers $authToken -Method Get).Value
+        (Invoke-RestMethod -Uri $uri -Headers $global:authToken -Method Get).Value
     } catch {
         $ex = $_.Exception
         $errorResponse = $ex.Response.GetResponseStream()
@@ -215,7 +215,7 @@ if ($global:authToken) {
     $DateTime = (Get-Date).ToUniversalTime()
 
     # If the authToken exists checking when it expires
-    $TokenExpires = ($authToken.ExpiresOn.datetime - $DateTime).Minutes
+    $TokenExpires = ($global:authToken.ExpiresOn.datetime - $DateTime).Minutes
 
     if ($TokenExpires -le 0) {
         write-host "Authentication Token expired" $TokenExpires "minutes ago" -ForegroundColor Yellow
