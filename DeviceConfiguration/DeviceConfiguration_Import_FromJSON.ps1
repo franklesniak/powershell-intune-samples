@@ -38,14 +38,14 @@ function Get-AuthToken {
 
     Write-Host "Checking for AzureAD module..."
 
-    $moduleAzureAD = Get-Module -Name "AzureAD" -ListAvailable
+    $arrModuleAzureAD = @(Get-Module -Name "AzureAD" -ListAvailable)
 
-    if ($null -eq $moduleAzureAD) {
+    if ($arrModuleAzureAD.Count -eq 0) {
         Write-Host "AzureAD PowerShell module not found, looking for AzureADPreview"
-        $moduleAzureAD = Get-Module -Name "AzureADPreview" -ListAvailable
+        $arrModuleAzureAD = @(Get-Module -Name "AzureADPreview" -ListAvailable)
     }
 
-    if ($null -eq $moduleAzureAD) {
+    if ($arrModuleAzureAD.Count -eq 0) {
         Write-Host
         Write-Host "AzureAD Powershell module not installed..." -ForegroundColor Red
         Write-Host "Install by running 'Install-Module AzureAD' or 'Install-Module AzureADPreview' from an elevated PowerShell prompt" -ForegroundColor Yellow
@@ -57,17 +57,21 @@ function Get-AuthToken {
     # Getting path to ActiveDirectory Assemblies
     # If the module count is greater than 1 find the latest version
 
-    if ($moduleAzureAD.Count -gt 1) {
+    if ($arrModuleAzureAD.Count -gt 1) {
 
-        $versionNewestInstalledAzureADModule = ($moduleAzureAD | Select-Object Version | Sort-Object)[-1]
+        $versionNewestInstalledAzureADModule = ($arrModuleAzureAD | Select-Object Version | Sort-Object)[-1]
 
-        $moduleAzureAD = $moduleAzureAD | Where-Object { $_.Version -eq $versionNewestInstalledAzureADModule.Version }
+        $arrModuleNewestAzureAD = @($arrModuleAzureAD | Where-Object { $_.Version -eq $versionNewestInstalledAzureADModule.Version })
 
         # Checking if there are multiple versions of the same module found
 
-        if ($moduleAzureAD.Count -gt 1) {
-            $moduleAzureAD = $moduleAzureAD | Select-Object -Unique
+        if ($arrModuleNewestAzureAD.Count -gt 1) {
+            $moduleAzureAD = @($arrModuleNewestAzureAD | Select-Object -Unique)[0]
+        } else {
+            $moduleAzureAD = $arrModuleNewestAzureAD[0]
         }
+    } else {
+        $moduleAzureAD = $arrModuleAzureAD[0]
     }
 
     $strPathToADALDLL = Join-Path $moduleAzureAD.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
