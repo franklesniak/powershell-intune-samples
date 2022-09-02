@@ -26,7 +26,7 @@ function Get-AuthToken {
     #>
 
     [cmdletbinding()]
-
+    [OutputType([System.Collections.Hashtable])]
     param (
         [Parameter(Mandatory = $true)]
         $strUPN
