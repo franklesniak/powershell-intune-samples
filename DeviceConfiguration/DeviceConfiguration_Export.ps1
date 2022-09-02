@@ -175,7 +175,7 @@ function Export-JSONData {
 
     try {
 
-        if ($JSON -eq "" -or $JSON -eq $null) {
+        if ([string]::IsNullOrEmpty($JSON)) {
             write-host "No JSON specified, please specify valid JSON..." -f Red
         } elseif (!$ExportPath) {
             write-host "No export path parameter set, please provide a path to export the file" -f Red
@@ -223,7 +223,7 @@ if ($global:authToken) {
 
         # Defining User Principal Name if not present
 
-        if ($User -eq $null -or $User -eq "") {
+        if ([string]::IsNullOrEmpty($User)) {
             $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
             Write-Host
         }
@@ -233,8 +233,7 @@ if ($global:authToken) {
 } else {
     # Authentication doesn't exist, calling Get-AuthToken function
 
-    if ($User -eq $null -or $User -eq "") {
-
+    if ([string]::IsNullOrEmpty($User)) {
         $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
         Write-Host
     }
