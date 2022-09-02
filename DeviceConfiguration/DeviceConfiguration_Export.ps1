@@ -10,7 +10,6 @@ See LICENSE in the project root for license information.
 ####################################################
 
 function Get-AuthToken {
-
     <#
     .SYNOPSIS
     This function is used to authenticate with the Graph API REST interface
@@ -24,133 +23,102 @@ function Get-AuthToken {
     #>
 
     [cmdletbinding()]
-
-    param
-    (
-        [Parameter(Mandatory=$true)]
-        $User
+    [OutputType([System.Collections.Hashtable])]
+    param (
+        [Parameter(Mandatory = $true)]
+        $UserUPN
     )
 
-    $userUpn = New-Object "System.Net.Mail.MailAddress" -ArgumentList $User
+    $mailaddressUserUPN = New-Object 'System.Net.Mail.MailAddress' -ArgumentList $UserUPN
 
-    $tenant = $userUpn.Host
+    $strDomainName = $mailaddressUserUPN.Host
 
-    Write-Host "Checking for AzureAD module..."
+    Write-Verbose 'Checking for AzureAD module...'
 
-    $AadModule = Get-Module -Name "AzureAD" -ListAvailable
+    $arrModuleAzureAD = @(Get-Module -Name 'AzureAD' -ListAvailable)
 
-    if ($AadModule -eq $null) {
-
-        Write-Host "AzureAD PowerShell module not found, looking for AzureADPreview"
-        $AadModule = Get-Module -Name "AzureADPreview" -ListAvailable
-
+    if ($arrModuleAzureAD.Count -eq 0) {
+        Write-Verbose 'AzureAD PowerShell module not found, looking for AzureADPreview'
+        $arrModuleAzureAD = @(Get-Module -Name 'AzureADPreview' -ListAvailable)
     }
 
-    if ($AadModule -eq $null) {
-        write-host
-        write-host "AzureAD Powershell module not installed..." -f Red
-        write-host "Install by running 'Install-Module AzureAD' or 'Install-Module AzureADPreview' from an elevated PowerShell prompt" -f Yellow
-        write-host "Script can't continue..." -f Red
-        write-host
+    if ($arrModuleAzureAD.Count -eq 0) {
+        Write-Error ('AzureAD Powershell module not installed...' + "`n" + 'Install by running "Install-Module AzureAD" or "Install-Module AzureADPreview" from an elevated PowerShell prompt' + "`n" + 'Script cannot continue...')
         exit
     }
 
     # Getting path to ActiveDirectory Assemblies
     # If the module count is greater than 1 find the latest version
 
-    if($AadModule.count -gt 1){
+    if ($arrModuleAzureAD.Count -gt 1) {
 
-        $Latest_Version = ($AadModule | select version | Sort-Object)[-1]
+        $versionNewestInstalledAzureADModule = ($arrModuleAzureAD | Select-Object Version | Sort-Object)[-1]
 
-        $aadModule = $AadModule | ? { $_.version -eq $Latest_Version.version }
+        $arrModuleNewestAzureAD = @($arrModuleAzureAD | Where-Object { $_.Version -eq $versionNewestInstalledAzureADModule.Version })
 
-            # Checking if there are multiple versions of the same module found
+        # Checking if there are multiple versions of the same module found
 
-            if($AadModule.count -gt 1){
-
-            $aadModule = $AadModule | select -Unique
-
-            }
-
-        $adal = Join-Path $AadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
-        $adalforms = Join-Path $AadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll"
-
+        if ($arrModuleNewestAzureAD.Count -gt 1) {
+            $moduleAzureAD = @($arrModuleNewestAzureAD | Select-Object -Unique)[0]
+        } else {
+            $moduleAzureAD = $arrModuleNewestAzureAD[0]
+        }
+    } else {
+        $moduleAzureAD = $arrModuleAzureAD[0]
     }
 
-    else {
+    $strPathToADALDLL = Join-Path $moduleAzureAD.ModuleBase 'Microsoft.IdentityModel.Clients.ActiveDirectory.dll'
+    $strPathToADALFormsDLL = Join-Path $moduleAzureAD.ModuleBase 'Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll'
 
-        $adal = Join-Path $AadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
-        $adalforms = Join-Path $AadModule.ModuleBase "Microsoft.IdentityModel.Clients.ActiveDirectory.Platform.dll"
+    [System.Reflection.Assembly]::LoadFrom($strPathToADALDLL) | Out-Null
 
-    }
+    [System.Reflection.Assembly]::LoadFrom($strPathToADALFormsDLL) | Out-Null
 
-    [System.Reflection.Assembly]::LoadFrom($adal) | Out-Null
+    $strMicrosoftIntunePowerShellAppID = 'd1ddf0e4-d672-4dae-b554-9d5bdfd93547'
 
-    [System.Reflection.Assembly]::LoadFrom($adalforms) | Out-Null
+    $strRedirectURI = 'urn:ietf:wg:oauth:2.0:oob'
 
-    $clientId = "d1ddf0e4-d672-4dae-b554-9d5bdfd93547"
+    $strResourceAppIDURI = 'https://graph.microsoft.com'
 
-    $redirectUri = "urn:ietf:wg:oauth:2.0:oob"
-
-    $resourceAppIdURI = "https://graph.microsoft.com"
-
-    $authority = "https://login.microsoftonline.com/$Tenant"
+    $strAuthority = ('https://login.microsoftonline.com/' + $strDomainName)
 
     try {
-
-        $authContext = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext" -ArgumentList $authority
+        $authenticationcontext = New-Object 'Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext' -ArgumentList $strAuthority
 
         # https://msdn.microsoft.com/en-us/library/azure/microsoft.identitymodel.clients.activedirectory.promptbehavior.aspx
         # Change the prompt behaviour to force credentials each time: Auto, Always, Never, RefreshSession
 
-        $platformParameters = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters" -ArgumentList "Auto"
+        $platformparameters = New-Object 'Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters' -ArgumentList 'Auto'
 
-        $userId = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier" -ArgumentList ($User, "OptionalDisplayableId")
+        $useridentifier = New-Object 'Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier' -ArgumentList ($UserUPN, 'OptionalDisplayableId')
 
-        $authResult = $authContext.AcquireTokenAsync($resourceAppIdURI,$clientId,$redirectUri,$platformParameters,$userId).Result
+        $authResult = $authenticationcontext.AcquireTokenAsync($strResourceAppIDURI, $strMicrosoftIntunePowerShellAppID, $strRedirectURI, $platformparameters, $useridentifier).Result
 
         # If the accesstoken is valid then create the authentication header
 
-        if($authResult.AccessToken){
-
+        if ($authResult.AccessToken) {
             # Creating header for Authorization token
 
             $authHeader = @{
-                'Content-Type'='application/json'
-                'Authorization'="Bearer " + $authResult.AccessToken
-                'ExpiresOn'=$authResult.ExpiresOn
+                'Content-Type' = 'application/json'
+                'Authorization' = "Bearer " + $authResult.AccessToken
+                'ExpiresOn' = $authResult.ExpiresOn
             }
 
             return $authHeader
-
-        }
-
-        else {
-
-            Write-Host
-            Write-Host "Authorization Access Token is null, please re-run authentication..." -ForegroundColor Red
-            Write-Host
+        } else {
+            Write-Output 'Error: Authorization Access Token is null, please re-run authentication...'
             break
-
         }
-
-    }
-
-    catch {
-
-        write-host $_.Exception.Message -f Red
-        write-host $_.Exception.ItemName -f Red
-        write-host
+    } catch {
+        Write-Output ('An error occurred getting an authorization token: ' + $_.Exception.Message + ' ' + $_.Exception.ItemName)
         break
-
     }
-
 }
 
 ####################################################
 
-Function Get-DeviceConfigurationPolicy(){
-
+function Get-DeviceConfigurationPolicy {
     <#
     .SYNOPSIS
     This function is used to get device configuration policies from the Graph API REST interface
@@ -167,16 +135,11 @@ Function Get-DeviceConfigurationPolicy(){
 
     $graphApiVersion = "Beta"
     $DCP_resource = "deviceManagement/deviceConfigurations"
-    
+
     try {
-    
         $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)"
         (Invoke-RestMethod -Uri $uri -Headers $authToken -Method Get).Value
-    
-    }
-    
-    catch {
-
+    } catch {
         $ex = $_.Exception
         $errorResponse = $ex.Response.GetResponseStream()
         $reader = New-Object System.IO.StreamReader($errorResponse)
@@ -185,17 +148,14 @@ Function Get-DeviceConfigurationPolicy(){
         $responseBody = $reader.ReadToEnd();
         Write-Host "Response content:`n$responseBody" -f Red
         Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
-        write-host
+        Write-Host
         break
-
     }
-
 }
 
 ####################################################
 
-Function Export-JSONData(){
-
+function Export-JSONData {
     <#
     .SYNOPSIS
     This function is used to export JSON data returned from Graph
@@ -209,10 +169,8 @@ Function Export-JSONData(){
     #>
 
     param (
-
         $JSON,
         $ExportPath
-
     )
 
     try {
