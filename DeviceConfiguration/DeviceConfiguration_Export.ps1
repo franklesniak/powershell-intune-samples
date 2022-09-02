@@ -138,7 +138,7 @@ function Get-DeviceConfigurationPolicy {
 
     try {
         $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)"
-        (Invoke-RestMethod -Uri $uri -Headers $global:authToken -Method Get).Value
+        (Invoke-RestMethod -Uri $uri -Headers $global:hashtableAuthToken -Method Get).Value
     } catch {
         $ex = $_.Exception
         $errorResponse = $ex.Response.GetResponseStream()
@@ -210,12 +210,12 @@ function Export-JSONData {
 write-host
 
 # Checking if authToken exists before running authentication
-if ($global:authToken) {
+if ($global:hashtableAuthToken) {
     # Setting DateTime to Universal time to work in all timezones
     $DateTime = (Get-Date).ToUniversalTime()
 
     # If the authToken exists checking when it expires
-    $TokenExpires = ($global:authToken.ExpiresOn.datetime - $DateTime).Minutes
+    $TokenExpires = ($global:hashtableAuthToken.ExpiresOn.datetime - $DateTime).Minutes
 
     if ($TokenExpires -le 0) {
         write-host "Authentication Token expired" $TokenExpires "minutes ago" -ForegroundColor Yellow
@@ -228,7 +228,7 @@ if ($global:authToken) {
             Write-Host
         }
 
-        $global:authToken = Get-AuthToken -User $User
+        $global:hashtableAuthToken = Get-AuthToken -User $User
     }
 } else {
     # Authentication doesn't exist, calling Get-AuthToken function
@@ -239,7 +239,7 @@ if ($global:authToken) {
     }
 
     # Getting the authorization token
-    $global:authToken = Get-AuthToken -User $User
+    $global:hashtableAuthToken = Get-AuthToken -User $User
 }
 
 #endregion
