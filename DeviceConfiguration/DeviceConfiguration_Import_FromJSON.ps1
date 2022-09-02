@@ -29,10 +29,10 @@ function Get-AuthToken {
     [OutputType([System.Collections.Hashtable])]
     param (
         [Parameter(Mandatory = $true)]
-        $strUPN
+        $UserUPN
     )
 
-    $mailaddressUserUPN = New-Object 'System.Net.Mail.MailAddress' -ArgumentList $strUPN
+    $mailaddressUserUPN = New-Object 'System.Net.Mail.MailAddress' -ArgumentList $UserUPN
 
     $strDomainName = $mailaddressUserUPN.Host
 
@@ -93,7 +93,7 @@ function Get-AuthToken {
 
         $platformparameters = New-Object 'Microsoft.IdentityModel.Clients.ActiveDirectory.PlatformParameters' -ArgumentList 'Auto'
 
-        $useridentifier = New-Object 'Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier' -ArgumentList ($strUPN, 'OptionalDisplayableId')
+        $useridentifier = New-Object 'Microsoft.IdentityModel.Clients.ActiveDirectory.UserIdentifier' -ArgumentList ($UserUPN, 'OptionalDisplayableId')
 
         $authResult = $authenticationcontext.AcquireTokenAsync($strResourceAppIDURI, $strMicrosoftIntunePowerShellAppID, $strRedirectURI, $platformparameters, $useridentifier).Result
 
@@ -137,7 +137,7 @@ function Add-DeviceConfigurationPolicy {
     [cmdletbinding()]
 
     param (
-        $strJSON
+        $JSON
     )
 
     $strGraphAPIVersion = 'Beta'
@@ -145,13 +145,13 @@ function Add-DeviceConfigurationPolicy {
     Write-Verbose ('Resource: ' + $strDCPResource)
 
     try {
-        if ([string]::IsNullOrEmpty($strJSON)) {
+        if ([string]::IsNullOrEmpty($JSON)) {
             Write-Output 'Error: No JSON specified, please specify valid JSON for the Device Configuration Policy...'
         } else {
-            $boolResult = Test-JSON -JSON $strJSON
+            $boolResult = Test-JSON -JSON $JSON
             if ($boolResult) {
                 $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
-                Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Post -Body $strJSON -ContentType 'application/json'
+                Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Post -Body $JSON -ContentType 'application/json'
             } else {
                 Write-Output 'Error: JSON is not valid, please specify valid JSON for the Device Configuration Policy...'
             }
@@ -185,11 +185,11 @@ function Test-JSON {
     #>
 
     param (
-        $strJSON
+        $JSON
     )
 
     try {
-        $JSONTest = ConvertFrom-Json $strJSON -ErrorAction Stop
+        $JSONTest = ConvertFrom-Json $JSON -ErrorAction Stop
         $boolValidJSON = $true
     } catch {
         $boolValidJSON = $false
