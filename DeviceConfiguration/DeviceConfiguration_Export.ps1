@@ -101,7 +101,7 @@ function Get-AuthToken {
 
             $authHeader = @{
                 'Content-Type' = 'application/json'
-                'Authorization' = "Bearer " + $authResult.AccessToken
+                'Authorization' = 'Bearer ' + $authResult.AccessToken
                 'ExpiresOn' = $authResult.ExpiresOn
             }
 
@@ -189,13 +189,13 @@ function Export-JSONData {
             $strDisplayName = $pscustomobjectConvertedJSON.displayName
 
             # Updating display name to follow file naming conventions - https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx
-            $strDisplayName = $strDisplayName -replace '\<|\>|:|"|/|\\|\||\?|\*', "_"
+            $strDisplayName = $strDisplayName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
 
-            $strJSONExportFileName = "$strDisplayName" + "_" + $(get-date -f dd-MM-yyyy-H-mm-ss) + ".json"
+            $strJSONExportFileName = $strDisplayName + '_' + (get-date -f dd-MM-yyyy-H-mm-ss) + '.json'
 
             write-host ('Export Path: "' + $ExportPath + '"')
 
-            $strJSON | Set-Content -LiteralPath "$ExportPath\$strJSONExportFileName"
+            $strJSON | Set-Content -LiteralPath ($ExportPath + '\' + $strJSONExportFileName)
             write-host ('JSON created in ' + $ExportPath + '\' + $strJSONExportFileName + '...') -f cyan
         }
     } catch {
@@ -257,7 +257,7 @@ if (!(Test-Path $ExportPath)) {
     $strConfirmation = read-host
 
     if ($strConfirmation -eq 'y' -or $strConfirmation -eq 'Y') {
-        new-item -ItemType Directory -Path "$ExportPath" | Out-Null
+        new-item -ItemType Directory -Path $ExportPath | Out-Null
         Write-Host
     } else {
         Write-Host 'Creation of directory path was cancelled...' -ForegroundColor Red
