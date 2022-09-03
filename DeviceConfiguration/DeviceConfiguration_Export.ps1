@@ -176,11 +176,11 @@ function Export-JSONData {
     try {
 
         if ([string]::IsNullOrEmpty($JSON)) {
-            write-host 'No JSON specified, please specify valid JSON...' -ForegroundColor Red
+            Write-Host 'No JSON specified, please specify valid JSON...' -ForegroundColor Red
         } elseif (!$ExportPath) {
-            write-host 'No export path parameter set, please provide a path to export the file' -ForegroundColor Red
+            Write-Host 'No export path parameter set, please provide a path to export the file' -ForegroundColor Red
         } elseif (!(Test-Path $ExportPath)) {
-            write-host ($ExportPath + ' does not exist, cannot export JSON Data') -ForegroundColor Red
+            Write-Host ($ExportPath + ' does not exist, cannot export JSON Data') -ForegroundColor Red
         } else {
             $strJSON = ConvertTo-Json $JSON -Depth 5
 
@@ -191,12 +191,12 @@ function Export-JSONData {
             # Updating display name to follow file naming conventions - https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx
             $strDisplayName = $strDisplayName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
 
-            $strJSONExportFileName = $strDisplayName + '_' + (get-date -f dd-MM-yyyy-H-mm-ss) + '.json'
+            $strJSONExportFileName = $strDisplayName + '_' + (Get-Date -f dd-MM-yyyy-H-mm-ss) + '.json'
 
-            write-host ('Export Path: "' + $ExportPath + '"')
+            Write-Host ('Export Path: "' + $ExportPath + '"')
 
             $strJSON | Set-Content -LiteralPath ($ExportPath + '\' + $strJSONExportFileName)
-            write-host ('JSON created in ' + $ExportPath + '\' + $strJSONExportFileName + '...') -ForegroundColor cyan
+            Write-Host ('JSON created in ' + $ExportPath + '\' + $strJSONExportFileName + '...') -ForegroundColor cyan
         }
     } catch {
         $_.Exception
@@ -207,7 +207,7 @@ function Export-JSONData {
 
 #region Authentication
 
-write-host
+Write-Host
 
 # Checking if hashtableAuthToken exists before running authentication
 if ($global:hashtableAuthToken) {
@@ -218,8 +218,8 @@ if ($global:hashtableAuthToken) {
     $intMinutesSinceTokenExpiration = ($datetimeUTC - $hashtableAuthToken.ExpiresOn.Datetime).Minutes
 
     if ($intMinutesSinceTokenExpiration -ge 0) {
-        write-host ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago') -ForegroundColor Yellow
-        write-host
+        Write-Host ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago') -ForegroundColor Yellow
+        Write-Host
 
         # Defining User Principal Name if not present
 
@@ -247,17 +247,17 @@ if ($global:hashtableAuthToken) {
 ####################################################
 
 $ExportPath = Read-Host -Prompt 'Please specify a path to export the policy data to e.g. C:\IntuneOutput'
-$ExportPath = $ExportPath.replace('"', '')
+$ExportPath = $ExportPath.Replace('"', '')
 
 # If the directory path doesn't exist prompt user to create the directory
 if (!(Test-Path $ExportPath)) {
     Write-Host
     Write-Host ('Path "' + $ExportPath + '" does not exist, do you want to create this directory? Y or N?') -ForegroundColor Yellow
 
-    $strConfirmation = read-host
+    $strConfirmation = Read-Host
 
     if ($strConfirmation -eq 'y' -or $strConfirmation -eq 'Y') {
-        new-item -ItemType Directory -Path $ExportPath | Out-Null
+        New-Item -ItemType Directory -Path $ExportPath | Out-Null
         Write-Host
     } else {
         Write-Host 'Creation of directory path was cancelled...' -ForegroundColor Red
@@ -273,7 +273,7 @@ Write-Host
 # Filtering out iOS and Windows Software Update Policies
 $DCPs = Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') }
 foreach ($DCP in $DCPs) {
-    write-host ('Device Configuration Policy: ' + $DCP.displayName) -ForegroundColor Yellow
+    Write-Host ('Device Configuration Policy: ' + $DCP.displayName) -ForegroundColor Yellow
     Export-JSONData -JSON $DCP -ExportPath $ExportPath
     Write-Host
 }
