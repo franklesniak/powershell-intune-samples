@@ -284,10 +284,10 @@ $pscustomobjectConvertedJSON = $strJSON | ConvertFrom-Json | Select-Object -Prop
 
 $strDisplayName = $pscustomobjectConvertedJSON.displayName
 
-$JSONOutput = $pscustomobjectConvertedJSON | ConvertTo-Json -Depth 5
+$strJSONOutput = $pscustomobjectConvertedJSON | ConvertTo-Json -Depth 5
 
 Write-Verbose ('Device Configuration Policy "' + $strDisplayName + '" Found...')
-Write-Debug $JSONOutput
+Write-Debug $strJSONOutput
 Write-Verbose ('Adding Device Configuration Policy "' + $strDisplayName + '"')
-Add-DeviceConfigurationPolicy -JSON $JSONOutput
+Add-DeviceConfigurationPolicy -JSON $strJSONOutput
 Write-Output ('Done adding Device Configuration Policy "' + $strDisplayName + '"')
