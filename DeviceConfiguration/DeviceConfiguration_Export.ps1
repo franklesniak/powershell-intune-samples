@@ -305,10 +305,10 @@ while ($null -eq $strExportPath) {
 Write-Host
 
 # Filtering out iOS and Windows Software Update Policies
-$DCPs = Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') }
-foreach ($DCP in $DCPs) {
-    Write-Host ('Device Configuration Policy: ' + $DCP.displayName) -ForegroundColor Yellow
-    Export-JSONData -JSON $DCP -ExportPath $strExportPath
+$arrPSCustomObjectDeviceConfigurationPolicies = @(Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
+foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectDeviceConfigurationPolicies) {
+    Write-Host ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName) -ForegroundColor Yellow
+    Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strExportPath
     Write-Host
 }
 
