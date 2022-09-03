@@ -191,7 +191,7 @@ function Export-JSONData {
             # Updating display name to follow file naming conventions - https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx
             $strDisplayName = $strDisplayName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
 
-            $strJSONExportFileName = $strDisplayName + '_' + (Get-Date -f dd-MM-yyyy-H-mm-ss) + '.json'
+            $strJSONExportFileName = $strDisplayName + '_' + (Get-Date -Format 'yyyy-MM-dd-HH-mm-ss') + '.json'
 
             Write-Host ('Export Path: "' + $ExportPath + '"')
 
