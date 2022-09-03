@@ -150,9 +150,7 @@ function Get-DeviceConfigurationPolicy {
         $reader.BaseStream.Position = 0
         $reader.DiscardBufferedData()
         $responseBody = $reader.ReadToEnd();
-        Write-Host ('Response content:' + "`n" + $responseBody) -ForegroundColor Red
-        Write-Error ('Request to $strURI failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription)
-        Write-Host
+        Write-Error ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
         break
     }
 }
@@ -180,11 +178,11 @@ function Export-JSONData {
     try {
 
         if ([string]::IsNullOrEmpty($JSON)) {
-            Write-Host 'No JSON specified, please specify valid JSON...' -ForegroundColor Red
+            Write-Error 'No JSON specified, please specify valid JSON...'
         } elseif (!$ExportPath) {
-            Write-Host 'No export path parameter set, please provide a path to export the file' -ForegroundColor Red
+            Write-Error 'No export path parameter set, please provide a path to export the file'
         } elseif (!(Test-Path $ExportPath)) {
-            Write-Host ($ExportPath + ' does not exist, cannot export JSON Data') -ForegroundColor Red
+            Write-Error ($ExportPath + ' does not exist, cannot export JSON Data')
         } else {
             $strJSON = ConvertTo-Json $JSON -Depth 5
 
@@ -197,10 +195,10 @@ function Export-JSONData {
 
             $strJSONExportFileName = $strDisplayName + '_' + (Get-Date -Format 'yyyy-MM-dd-HH-mm-ss') + '.json'
 
-            Write-Host ('Export Path: "' + $ExportPath + '"')
+            Write-Verbose ('Export Path: "' + $ExportPath + '"')
 
             $strJSON | Set-Content -LiteralPath ($ExportPath + '\' + $strJSONExportFileName)
-            Write-Host ('JSON created in ' + $ExportPath + '\' + $strJSONExportFileName + '...') -ForegroundColor cyan
+            Write-Verbose ('JSON created in ' + $ExportPath + '\' + $strJSONExportFileName + '...')
         }
     } catch {
         $_.Exception
@@ -253,7 +251,7 @@ if ([string]::IsNullOrEmpty($ExportPath) -eq $false) {
     if (Test-Path -Path $ExportPath -Type Container) {
         $strExportPath = $ExportPath
     } else {
-        Write-Host ('Path "' + $ExportPath + '" does not exist, do you want to attempt to create this directory (Y/N)?') -ForegroundColor Yellow
+        Write-Output ('Path "' + $ExportPath + '" does not exist, do you want to attempt to create this directory (Y/N)?')
 
         $strConfirmation = Read-Host
 
@@ -262,10 +260,10 @@ if ([string]::IsNullOrEmpty($ExportPath) -eq $false) {
             if (Test-Path -Path $ExportPath -Type Container) {
                 $strExportPath = $ExportPath
             } else {
-                Write-Host 'Creation of directory path failed...' -ForegroundColor Red
+                Write-Warning 'Creation of directory path failed...'
             }
         } else {
-            Write-Host 'Creation of directory path was cancelled...' -ForegroundColor Red
+            Write-Warning 'Creation of directory path was cancelled...'
             break
         }
     }
@@ -278,7 +276,7 @@ while ($null -eq $strExportPath) {
         if (Test-Path -Path $ExportPath -Type Container) {
             $strExportPath = $ExportPath
         } else {
-            Write-Host ('Path "' + $ExportPath + '" does not exist, do you want to attempt to create this directory (Y/N)?') -ForegroundColor Yellow
+            Write-Output ('Path "' + $ExportPath + '" does not exist, do you want to attempt to create this directory (Y/N)?')
 
             $strConfirmation = Read-Host
 
@@ -287,10 +285,10 @@ while ($null -eq $strExportPath) {
                 if (Test-Path -Path $ExportPath -Type Container) {
                     $strExportPath = $ExportPath
                 } else {
-                    Write-Host 'Creation of directory path failed...' -ForegroundColor Red
+                    Write-Warning 'Creation of directory path failed...'
                 }
             } else {
-                Write-Host 'Creation of directory path was cancelled...' -ForegroundColor Red
+                Write-Warning 'Creation of directory path was cancelled...'
                 break
             }
         }
@@ -302,14 +300,11 @@ while ($null -eq $strExportPath) {
 
 #endregion GetExportPath ##############################################################
 
-Write-Host
-
 # Filtering out iOS and Windows Software Update Policies
 $arrPSCustomObjectDeviceConfigurationPolicies = @(Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
 foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectDeviceConfigurationPolicies) {
-    Write-Host ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName) -ForegroundColor Yellow
+    Write-Verbose ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName)
     Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strExportPath
-    Write-Host
 }
 
-Write-Host
+Write-Output 'Device configuration policy export script completed.'
