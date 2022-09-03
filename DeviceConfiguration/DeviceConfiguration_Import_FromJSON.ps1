@@ -106,7 +106,7 @@ function Get-AuthToken {
 
             $authHeader = @{
                 'Content-Type' = 'application/json'
-                'Authorization' = "Bearer " + $authResult.AccessToken
+                'Authorization' = 'Bearer ' + $authResult.AccessToken
                 'ExpiresOn' = $authResult.ExpiresOn
             }
 
