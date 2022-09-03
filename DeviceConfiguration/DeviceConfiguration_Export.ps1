@@ -176,11 +176,11 @@ function Export-JSONData {
     try {
 
         if ([string]::IsNullOrEmpty($JSON)) {
-            write-host "No JSON specified, please specify valid JSON..." -f Red
+            write-host 'No JSON specified, please specify valid JSON...' -f Red
         } elseif (!$ExportPath) {
-            write-host "No export path parameter set, please provide a path to export the file" -f Red
+            write-host 'No export path parameter set, please provide a path to export the file' -f Red
         } elseif (!(Test-Path $ExportPath)) {
-            write-host "$ExportPath doesn't exist, can't export JSON Data" -f Red
+            write-host ($ExportPath + ' does not exist, cannot export JSON Data') -f Red
         } else {
             $strJSON = ConvertTo-Json $JSON -Depth 5
 
@@ -193,10 +193,10 @@ function Export-JSONData {
 
             $strJSONExportFileName = "$strDisplayName" + "_" + $(get-date -f dd-MM-yyyy-H-mm-ss) + ".json"
 
-            write-host "Export Path:" "$ExportPath"
+            write-host ('Export Path: "' + $ExportPath + '"')
 
             $strJSON | Set-Content -LiteralPath "$ExportPath\$strJSONExportFileName"
-            write-host "JSON created in $ExportPath\$strJSONExportFileName..." -f cyan
+            write-host ('JSON created in ' + $ExportPath + '\' + $strJSONExportFileName + '...') -f cyan
         }
     } catch {
         $_.Exception
