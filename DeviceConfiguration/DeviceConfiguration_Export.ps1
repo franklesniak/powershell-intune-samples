@@ -146,7 +146,7 @@ function Get-DeviceConfigurationPolicy {
         $reader.BaseStream.Position = 0
         $reader.DiscardBufferedData()
         $responseBody = $reader.ReadToEnd();
-        Write-Host ('Response content:' + "`n" + $responseBody) -f Red
+        Write-Host ('Response content:' + "`n" + $responseBody) -ForegroundColor Red
         Write-Error ('Request to $strURI failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription)
         Write-Host
         break
@@ -176,11 +176,11 @@ function Export-JSONData {
     try {
 
         if ([string]::IsNullOrEmpty($JSON)) {
-            write-host 'No JSON specified, please specify valid JSON...' -f Red
+            write-host 'No JSON specified, please specify valid JSON...' -ForegroundColor Red
         } elseif (!$ExportPath) {
-            write-host 'No export path parameter set, please provide a path to export the file' -f Red
+            write-host 'No export path parameter set, please provide a path to export the file' -ForegroundColor Red
         } elseif (!(Test-Path $ExportPath)) {
-            write-host ($ExportPath + ' does not exist, cannot export JSON Data') -f Red
+            write-host ($ExportPath + ' does not exist, cannot export JSON Data') -ForegroundColor Red
         } else {
             $strJSON = ConvertTo-Json $JSON -Depth 5
 
@@ -196,7 +196,7 @@ function Export-JSONData {
             write-host ('Export Path: "' + $ExportPath + '"')
 
             $strJSON | Set-Content -LiteralPath ($ExportPath + '\' + $strJSONExportFileName)
-            write-host ('JSON created in ' + $ExportPath + '\' + $strJSONExportFileName + '...') -f cyan
+            write-host ('JSON created in ' + $ExportPath + '\' + $strJSONExportFileName + '...') -ForegroundColor cyan
         }
     } catch {
         $_.Exception
@@ -273,7 +273,7 @@ Write-Host
 # Filtering out iOS and Windows Software Update Policies
 $DCPs = Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') }
 foreach ($DCP in $DCPs) {
-    write-host ('Device Configuration Policy: ' + $DCP.displayName) -f Yellow
+    write-host ('Device Configuration Policy: ' + $DCP.displayName) -ForegroundColor Yellow
     Export-JSONData -JSON $DCP -ExportPath $ExportPath
     Write-Host
 }
