@@ -218,13 +218,13 @@ if ($global:hashtableAuthToken) {
     $intMinutesSinceTokenExpiration = ($datetimeUTC - $hashtableAuthToken.ExpiresOn.Datetime).Minutes
 
     if ($intMinutesSinceTokenExpiration -ge 0) {
-        write-host "Authentication Token expired" $intMinutesSinceTokenExpiration "minutes ago" -ForegroundColor Yellow
+        write-host ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago') -ForegroundColor Yellow
         write-host
 
         # Defining User Principal Name if not present
 
         if ([string]::IsNullOrEmpty($User)) {
-            $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+            $User = Read-Host -Prompt 'Please specify your user principal name for Azure Authentication'
             Write-Host
         }
 
@@ -234,7 +234,7 @@ if ($global:hashtableAuthToken) {
     # Authentication doesn't exist, calling Get-AuthToken function
 
     if ([string]::IsNullOrEmpty($User)) {
-        $User = Read-Host -Prompt "Please specify your user principal name for Azure Authentication"
+        $User = Read-Host -Prompt 'Please specify your user principal name for Azure Authentication'
         Write-Host
     }
 
@@ -246,21 +246,21 @@ if ($global:hashtableAuthToken) {
 
 ####################################################
 
-$ExportPath = Read-Host -Prompt "Please specify a path to export the policy data to e.g. C:\IntuneOutput"
+$ExportPath = Read-Host -Prompt 'Please specify a path to export the policy data to e.g. C:\IntuneOutput'
 $ExportPath = $ExportPath.replace('"', '')
 
 # If the directory path doesn't exist prompt user to create the directory
-if (!(Test-Path "$ExportPath")) {
+if (!(Test-Path $ExportPath)) {
     Write-Host
-    Write-Host "Path '$ExportPath' doesn't exist, do you want to create this directory? Y or N?" -ForegroundColor Yellow
+    Write-Host ('Path "' + $ExportPath + '" does not exist, do you want to create this directory? Y or N?') -ForegroundColor Yellow
 
     $strConfirmation = read-host
 
-    if ($strConfirmation -eq "y" -or $strConfirmation -eq "Y") {
+    if ($strConfirmation -eq 'y' -or $strConfirmation -eq 'Y') {
         new-item -ItemType Directory -Path "$ExportPath" | Out-Null
         Write-Host
     } else {
-        Write-Host "Creation of directory path was cancelled..." -ForegroundColor Red
+        Write-Host 'Creation of directory path was cancelled...' -ForegroundColor Red
         Write-Host
         break
     }
@@ -271,10 +271,10 @@ if (!(Test-Path "$ExportPath")) {
 Write-Host
 
 # Filtering out iOS and Windows Software Update Policies
-$DCPs = Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne "#microsoft.graph.iosUpdateConfiguration") -and ($_.'@odata.type' -ne "#microsoft.graph.windowsUpdateForBusinessConfiguration") }
+$DCPs = Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') }
 foreach ($DCP in $DCPs) {
-    write-host "Device Configuration Policy:"$DCP.displayName -f Yellow
-    Export-JSONData -JSON $DCP -ExportPath "$ExportPath"
+    write-host ('Device Configuration Policy: ' + $DCP.displayName) -f Yellow
+    Export-JSONData -JSON $DCP -ExportPath $ExportPath
     Write-Host
 }
 
