@@ -7,10 +7,13 @@ See LICENSE in the project root for license information.
 
 #>
 [cmdletbinding()]
-param ( [Parameter(Mandatory = $false)][String]$FileName )
-# TODO: $FilePath would make more sense than $FileName
+param (
+    [Parameter(Mandatory = $false)][String]$FileName,
+    [Parameter(Mandatory = $false)][String]$FilePath
+)
+# FilePath parameter is preferable becasue it's more clear, but FileName is kept for backward compatibility
 
-$strThisScriptVersionNumber = [version]'1.0.20220903.0'
+$strThisScriptVersionNumber = [version]'1.1.20220903.0'
 
 ####################################################
 
@@ -252,20 +255,26 @@ if ($global:hashtableAuthToken) {
 #region GetImportPath ##############################################################
 
 $strImportPath = $null
-if ([string]::IsNullOrEmpty($FileName) -eq $false) {
+if ([string]::IsNullOrEmpty($FilePath)) {
+    # FilePath parameter was not specified; check FileName parameter
+    if ([string]::IsNullOrEmpty($FileName) -eq $false) {
+        $FilePath = $FileName
+    }
+}
+if ([string]::IsNullOrEmpty($FilePath) -eq $false) {
     # Replace quotes for Test-Path
-    $FileName = $FileName.Replace('"', '')
-    if (Test-Path -Path $FileName -Type Leaf) {
-        $strImportPath = $FileName
+    $FilePath = $FilePath.Replace('"', '')
+    if (Test-Path -Path $FilePath -Type Leaf) {
+        $strImportPath = $FilePath
     }
 }
 while ($null -eq $strImportPath) {
-    $FileName = Read-Host -Prompt 'Please specify a path to a JSON file to import data from e.g. C:\IntuneOutput\Policies\policy.json'
-    if ([string]::IsNullOrEmpty($FileName) -eq $false) {
+    $FilePath = Read-Host -Prompt 'Please specify a path to a JSON file to import data from e.g. C:\IntuneOutput\Policies\policy.json'
+    if ([string]::IsNullOrEmpty($FilePath) -eq $false) {
         # Replace quotes for Test-Path
-        $FileName = $FileName.Replace('"', '')
-        if (Test-Path -Path $FileName -Type Leaf) {
-            $strImportPath = $FileName
+        $FilePath = $FilePath.Replace('"', '')
+        if (Test-Path -Path $FilePath -Type Leaf) {
+            $strImportPath = $FilePath
         }
     }
     if ($null -eq $strImportPath) {
