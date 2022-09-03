@@ -10,6 +10,8 @@ See LICENSE in the project root for license information.
 param ( [Parameter(Mandatory = $false)][String]$FileName )
 # TODO: $FilePath would make more sense than $FileName
 
+$strThisScriptVersionNumber = [version]'1.0.20220903.0'
+
 ####################################################
 
 function Get-AuthToken {
