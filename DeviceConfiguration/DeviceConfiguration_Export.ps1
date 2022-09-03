@@ -133,11 +133,11 @@ function Get-DeviceConfigurationPolicy {
 
     [cmdletbinding()]
 
-    $strGraphAPIVersion = "Beta"
-    $strDCPResource = "deviceManagement/deviceConfigurations"
+    $strGraphAPIVersion = 'Beta'
+    $strDCPResource = 'deviceManagement/deviceConfigurations'
 
     try {
-        $strURI = "https://graph.microsoft.com/$strGraphAPIVersion/$($strDCPResource)"
+        $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
         (Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value
     } catch {
         $ex = $_.Exception
@@ -146,8 +146,8 @@ function Get-DeviceConfigurationPolicy {
         $reader.BaseStream.Position = 0
         $reader.DiscardBufferedData()
         $responseBody = $reader.ReadToEnd();
-        Write-Host "Response content:`n$responseBody" -f Red
-        Write-Error "Request to $strURI failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+        Write-Host ('Response content:' + "`n" + $responseBody) -f Red
+        Write-Error ('Request to $strURI failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription)
         Write-Host
         break
     }
