@@ -249,6 +249,8 @@ if ($global:hashtableAuthToken) {
 
 #endregion Authentication #############################################################
 
+#region GetImportPath ##############################################################
+
 $strImportPath = $null
 if ([string]::IsNullOrEmpty($FileName) -eq $false) {
     # Replace quotes for Test-Path
@@ -276,7 +278,7 @@ if (!(Test-Path $strImportPath)) {
     break
 }
 
-####################################################
+#endregion GetImportPath ##############################################################
 
 $strJSON = Get-Content $strImportPath
 
