@@ -133,12 +133,12 @@ function Get-DeviceConfigurationPolicy {
 
     [cmdletbinding()]
 
-    $graphApiVersion = "Beta"
-    $DCP_resource = "deviceManagement/deviceConfigurations"
+    $strGraphAPIVersion = "Beta"
+    $strDCPResource = "deviceManagement/deviceConfigurations"
 
     try {
-        $uri = "https://graph.microsoft.com/$graphApiVersion/$($DCP_resource)"
-        (Invoke-RestMethod -Uri $uri -Headers $global:hashtableAuthToken -Method Get).Value
+        $strURI = "https://graph.microsoft.com/$strGraphAPIVersion/$($strDCPResource)"
+        (Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value
     } catch {
         $ex = $_.Exception
         $errorResponse = $ex.Response.GetResponseStream()
@@ -147,7 +147,7 @@ function Get-DeviceConfigurationPolicy {
         $reader.DiscardBufferedData()
         $responseBody = $reader.ReadToEnd();
         Write-Host "Response content:`n$responseBody" -f Red
-        Write-Error "Request to $Uri failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
+        Write-Error "Request to $strURI failed with HTTP Status $($ex.Response.StatusCode) $($ex.Response.StatusDescription)"
         Write-Host
         break
     }
@@ -182,21 +182,21 @@ function Export-JSONData {
         } elseif (!(Test-Path $ExportPath)) {
             write-host "$ExportPath doesn't exist, can't export JSON Data" -f Red
         } else {
-            $JSON1 = ConvertTo-Json $JSON -Depth 5
+            $strJSON = ConvertTo-Json $JSON -Depth 5
 
-            $JSON_Convert = $JSON1 | ConvertFrom-Json
+            $pscustomobjectConvertedJSON = $strJSON | ConvertFrom-Json
 
-            $displayName = $JSON_Convert.displayName
+            $strDisplayName = $pscustomobjectConvertedJSON.displayName
 
             # Updating display name to follow file naming conventions - https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx
-            $DisplayName = $DisplayName -replace '\<|\>|:|"|/|\\|\||\?|\*', "_"
+            $strDisplayName = $strDisplayName -replace '\<|\>|:|"|/|\\|\||\?|\*', "_"
 
-            $FileName_JSON = "$DisplayName" + "_" + $(get-date -f dd-MM-yyyy-H-mm-ss) + ".json"
+            $strJSONExportFileName = "$strDisplayName" + "_" + $(get-date -f dd-MM-yyyy-H-mm-ss) + ".json"
 
             write-host "Export Path:" "$ExportPath"
 
-            $JSON1 | Set-Content -LiteralPath "$ExportPath\$FileName_JSON"
-            write-host "JSON created in $ExportPath\$FileName_JSON..." -f cyan
+            $strJSON | Set-Content -LiteralPath "$ExportPath\$strJSONExportFileName"
+            write-host "JSON created in $ExportPath\$strJSONExportFileName..." -f cyan
         }
     } catch {
         $_.Exception
@@ -209,16 +209,16 @@ function Export-JSONData {
 
 write-host
 
-# Checking if authToken exists before running authentication
+# Checking if hashtableAuthToken exists before running authentication
 if ($global:hashtableAuthToken) {
     # Setting DateTime to Universal time to work in all timezones
-    $DateTime = (Get-Date).ToUniversalTime()
+    $datetimeUTC = (Get-Date).ToUniversalTime()
 
-    # If the authToken exists checking when it expires
-    $TokenExpires = ($global:hashtableAuthToken.ExpiresOn.datetime - $DateTime).Minutes
+    # If the hashtableAuthToken exists checking when it expires
+    $intMinutesSinceTokenExpiration = ($datetimeUTC - $hashtableAuthToken.ExpiresOn.Datetime).Minutes
 
-    if ($TokenExpires -le 0) {
-        write-host "Authentication Token expired" $TokenExpires "minutes ago" -ForegroundColor Yellow
+    if ($intMinutesSinceTokenExpiration -ge 0) {
+        write-host "Authentication Token expired" $intMinutesSinceTokenExpiration "minutes ago" -ForegroundColor Yellow
         write-host
 
         # Defining User Principal Name if not present
@@ -247,17 +247,16 @@ if ($global:hashtableAuthToken) {
 ####################################################
 
 $ExportPath = Read-Host -Prompt "Please specify a path to export the policy data to e.g. C:\IntuneOutput"
-
-# If the directory path doesn't exist prompt user to create the directory
 $ExportPath = $ExportPath.replace('"', '')
 
+# If the directory path doesn't exist prompt user to create the directory
 if (!(Test-Path "$ExportPath")) {
     Write-Host
     Write-Host "Path '$ExportPath' doesn't exist, do you want to create this directory? Y or N?" -ForegroundColor Yellow
 
-    $Confirm = read-host
+    $strConfirmation = read-host
 
-    if ($Confirm -eq "y" -or $Confirm -eq "Y") {
+    if ($strConfirmation -eq "y" -or $strConfirmation -eq "Y") {
         new-item -ItemType Directory -Path "$ExportPath" | Out-Null
         Write-Host
     } else {
