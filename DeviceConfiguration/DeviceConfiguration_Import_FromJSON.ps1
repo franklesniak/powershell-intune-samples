@@ -214,7 +214,7 @@ if ($arrTestJSONCommands.Count -eq 0) {
 
 #endregion DefineTestJSONIfNotAlreadyDefined ##########################################
 
-#region Authentication
+#region Authentication #############################################################
 
 # Checking if hashtableAuthToken exists before running authentication
 if ($global:hashtableAuthToken) {
@@ -247,9 +247,7 @@ if ($global:hashtableAuthToken) {
     $global:hashtableAuthToken = Get-AuthToken -User $strUPN
 }
 
-#endregion
-
-####################################################
+#endregion Authentication #############################################################
 
 $strImportPath = $null
 if ([string]::IsNullOrEmpty($FileName) -eq $false) {
