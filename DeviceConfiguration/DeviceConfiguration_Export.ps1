@@ -6,6 +6,10 @@ Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT
 See LICENSE in the project root for license information.
 
 #>
+[cmdletbinding()]
+param ( [Parameter(Mandatory = $false)][String]$ExportPath )
+
+$strThisScriptVersionNumber = [version]'1.1.20220903.0'
 
 ####################################################
 
@@ -240,27 +244,63 @@ if ($global:hashtableAuthToken) {
 
 #endregion Authentication #############################################################
 
-$ExportPath = Read-Host -Prompt 'Please specify a path to export the policy data to e.g. C:\IntuneOutput'
-$ExportPath = $ExportPath.Replace('"', '')
+#region GetExportPath ##############################################################
 
-# If the directory path doesn't exist prompt user to create the directory
-if (!(Test-Path $ExportPath)) {
-    Write-Host
-    Write-Host ('Path "' + $ExportPath + '" does not exist, do you want to create this directory? Y or N?') -ForegroundColor Yellow
-
-    $strConfirmation = Read-Host
-
-    if ($strConfirmation -eq 'y' -or $strConfirmation -eq 'Y') {
-        New-Item -ItemType Directory -Path $ExportPath | Out-Null
-        Write-Host
+$strExportPath = $null
+if ([string]::IsNullOrEmpty($ExportPath) -eq $false) {
+    # Replace quotes for Test-Path
+    $ExportPath = $ExportPath.Replace('"', '')
+    if (Test-Path -Path $ExportPath -Type Container) {
+        $strExportPath = $ExportPath
     } else {
-        Write-Host 'Creation of directory path was cancelled...' -ForegroundColor Red
-        Write-Host
-        break
+        Write-Host ('Path "' + $ExportPath + '" does not exist, do you want to attempt to create this directory (Y/N)?') -ForegroundColor Yellow
+
+        $strConfirmation = Read-Host
+
+        if ($strConfirmation -eq 'y' -or $strConfirmation -eq 'yes') {
+            New-Item -ItemType Directory -Path $ExportPath -ErrorAction SilentlyContinue | Out-Null
+            if (Test-Path -Path $ExportPath -Type Container) {
+                $strExportPath = $ExportPath
+            } else {
+                Write-Host 'Creation of directory path failed...' -ForegroundColor Red
+            }
+        } else {
+            Write-Host 'Creation of directory path was cancelled...' -ForegroundColor Red
+            break
+        }
+    }
+}
+while ($null -eq $strExportPath) {
+    $ExportPath = Read-Host -Prompt 'Please specify a path to export the policy data to e.g. C:\IntuneOutput'
+    if ([string]::IsNullOrEmpty($ExportPath) -eq $false) {
+        # Replace quotes for Test-Path
+        $ExportPath = $ExportPath.Replace('"', '')
+        if (Test-Path -Path $ExportPath -Type Container) {
+            $strExportPath = $ExportPath
+        } else {
+            Write-Host ('Path "' + $ExportPath + '" does not exist, do you want to attempt to create this directory (Y/N)?') -ForegroundColor Yellow
+
+            $strConfirmation = Read-Host
+
+            if ($strConfirmation -eq 'y' -or $strConfirmation -eq 'yes') {
+                New-Item -ItemType Directory -Path $ExportPath -ErrorAction SilentlyContinue | Out-Null
+                if (Test-Path -Path $ExportPath -Type Container) {
+                    $strExportPath = $ExportPath
+                } else {
+                    Write-Host 'Creation of directory path failed...' -ForegroundColor Red
+                }
+            } else {
+                Write-Host 'Creation of directory path was cancelled...' -ForegroundColor Red
+                break
+            }
+        }
+    }
+    if ($null -eq $strExportPath) {
+        Write-Warning 'Invalid path! Please try again...'
     }
 }
 
-####################################################
+#endregion GetExportPath ##############################################################
 
 Write-Host
 
@@ -268,7 +308,7 @@ Write-Host
 $DCPs = Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') }
 foreach ($DCP in $DCPs) {
     Write-Host ('Device Configuration Policy: ' + $DCP.displayName) -ForegroundColor Yellow
-    Export-JSONData -JSON $DCP -ExportPath $ExportPath
+    Export-JSONData -JSON $DCP -ExportPath $strExportPath
     Write-Host
 }
 
