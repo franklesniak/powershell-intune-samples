@@ -205,12 +205,11 @@ function Export-JSONData {
 
 ####################################################
 
-#region Authentication
-
-Write-Host
+#region Authentication #############################################################
 
 # Checking if hashtableAuthToken exists before running authentication
 if ($global:hashtableAuthToken) {
+
     # Setting DateTime to Universal time to work in all timezones
     $datetimeUTC = (Get-Date).ToUniversalTime()
 
@@ -218,33 +217,28 @@ if ($global:hashtableAuthToken) {
     $intMinutesSinceTokenExpiration = ($datetimeUTC - $hashtableAuthToken.ExpiresOn.Datetime).Minutes
 
     if ($intMinutesSinceTokenExpiration -ge 0) {
-        Write-Host ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago') -ForegroundColor Yellow
-        Write-Host
+        Write-Output ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago')
 
         # Defining User Principal Name if not present
 
-        if ([string]::IsNullOrEmpty($User)) {
-            $User = Read-Host -Prompt 'Please specify your user principal name for Azure Authentication'
-            Write-Host
+        if ([string]::IsNullOrEmpty($strUPN)) {
+            $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
         }
 
-        $global:hashtableAuthToken = Get-AuthToken -User $User
+        $global:hashtableAuthToken = Get-AuthToken -User $strUPN
     }
 } else {
     # Authentication doesn't exist, calling Get-AuthToken function
 
-    if ([string]::IsNullOrEmpty($User)) {
-        $User = Read-Host -Prompt 'Please specify your user principal name for Azure Authentication'
-        Write-Host
+    if ([string]::IsNullOrEmpty($strUPN)) {
+        $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
     }
 
     # Getting the authorization token
-    $global:hashtableAuthToken = Get-AuthToken -User $User
+    $global:hashtableAuthToken = Get-AuthToken -User $strUPN
 }
 
-#endregion
-
-####################################################
+#endregion Authentication #############################################################
 
 $ExportPath = Read-Host -Prompt 'Please specify a path to export the policy data to e.g. C:\IntuneOutput'
 $ExportPath = $ExportPath.Replace('"', '')
