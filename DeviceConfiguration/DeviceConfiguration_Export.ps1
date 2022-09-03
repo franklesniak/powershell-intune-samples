@@ -7,7 +7,10 @@ See LICENSE in the project root for license information.
 
 #>
 [cmdletbinding()]
-param ( [Parameter(Mandatory = $false)][String]$ExportPath )
+param (
+    [Parameter(Mandatory = $false)][String]$ExportPath,
+    [Parameter(Mandatory = $false)][String]$UserPrincipalName
+)
 
 $strThisScriptVersionNumber = [version]'1.1.20220903.0'
 
@@ -223,21 +226,21 @@ if ($global:hashtableAuthToken) {
 
         # Defining User Principal Name if not present
 
-        if ([string]::IsNullOrEmpty($strUPN)) {
-            $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
+        while ([string]::IsNullOrEmpty($UserPrincipalName)) {
+            $UserPrincipalName = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
         }
 
-        $global:hashtableAuthToken = Get-AuthToken -User $strUPN
+        $global:hashtableAuthToken = Get-AuthToken -User $UserPrincipalName
     }
 } else {
     # Authentication doesn't exist, calling Get-AuthToken function
 
-    if ([string]::IsNullOrEmpty($strUPN)) {
-        $strUPN = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
+    while ([string]::IsNullOrEmpty($UserPrincipalName)) {
+        $UserPrincipalName = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
     }
 
     # Getting the authorization token
-    $global:hashtableAuthToken = Get-AuthToken -User $strUPN
+    $global:hashtableAuthToken = Get-AuthToken -User $UserPrincipalName
 }
 
 #endregion Authentication #############################################################
