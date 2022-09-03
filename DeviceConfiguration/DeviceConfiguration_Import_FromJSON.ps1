@@ -251,6 +251,8 @@ if ($global:hashtableAuthToken) {
 
 $strImportPath = $null
 if ([string]::IsNullOrEmpty($FileName) -eq $false) {
+    # Replace quotes for Test-Path
+    $FileName = $FileName.Replace('"', '')
     if (Test-Path -Path $FileName -Type Leaf) {
         $strImportPath = $FileName
     }
@@ -258,6 +260,8 @@ if ([string]::IsNullOrEmpty($FileName) -eq $false) {
 while ($null -eq $strImportPath) {
     $FileName = Read-Host -Prompt 'Please specify a path to a JSON file to import data from e.g. C:\IntuneOutput\Policies\policy.json'
     if ([string]::IsNullOrEmpty($FileName) -eq $false) {
+        # Replace quotes for Test-Path
+        $FileName = $FileName.Replace('"', '')
         if (Test-Path -Path $FileName -Type Leaf) {
             $strImportPath = $FileName
         }
@@ -266,9 +270,6 @@ while ($null -eq $strImportPath) {
         Write-Warning 'Invalid path! Please try again...'
     }
 }
-
-# Replacing quotes for Test-Path
-$strImportPath = $strImportPath.Replace('"', '')
 
 if (!(Test-Path $strImportPath)) {
     Write-Error 'Import Path for JSON file does not exist... script cannot continue!'
