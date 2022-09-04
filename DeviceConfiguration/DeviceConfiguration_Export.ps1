@@ -287,61 +287,93 @@ if ($PlatformID -eq [System.PlatformID]::Unix) {
 }
 #endregion Detect PowerShell Environment ##############################################
 
-#region Check for PowerShell version compatible with AzureAD module ################
-if ($boolWindowsPowerShell -eq $false -and $boolAzureCloudShell -eq $false) {
-    if ($boolNonWindowsPlatform) {
-        Write-Warning 'This script is only compatible with Windows or an Azure Cloud Shell environment. Please switch to one of these platforms and try again.'
-        return # Quit script
-    } else {
-        # Windows platform, but not Windows PowerShell
-        Write-Warning 'This script is designed to run from Windows PowerShell. Please switch to Windows PowerShell and try again.'
-        return # Quit script
-    }
-}
-
+#region Quit if PowerShell version is very old #####################################
 if ($versionPowerShell -lt [version]'3.0') {
     Write-Warning 'This script requires PowerShell v3 or higher. Please upgrade to PowerShell v3 or higher and try again.'
     return # Quit script
 }
-#endregion Check for PowerShell version compatible with AzureAD module ################
+#endregion Quit if PowerShell version is very old #####################################
+
+#region Check for required PowerShell modules based on Graph API approach ##########
+if ($boolUseGraphAPIModule -eq $true) {
+    #TODO: Code Graph API Module approach
+} else {
+    # Graph API REST approach
+    $arrModuleAzureAD = @()
+    $arrModuleAzureADPreview = @()
+    Write-Verbose 'Checking for AzureAD module...'
+    $arrModuleAzureAD = @(Get-Module -Name 'AzureAD' -ListAvailable)
+
+    if ($arrModuleAzureAD.Count -eq 0) {
+        Write-Verbose 'AzureAD PowerShell module not found, looking for AzureADPreview'
+        $arrModuleAzureADPreview = @(Get-Module -Name 'AzureADPreview' -ListAvailable)
+    }
+
+    if (($arrModuleAzureAD.Count -eq 0) -and ($arrModuleAzureADPreview.Count -eq 0)) {
+        Write-Warning ('This script requires the AzureAD or AzureADPreview Powershell module. Please install it and then try again.' + [System.Environment]::NewLine + 'You can install the AzureAD PowerShell module from the PowerShell Gallery by running the following command:' + [System.Environment]::NewLine + 'Install-Module AzureAD' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
+        return # Quit script
+    }
+}
+#endregion Check for required PowerShell modules based on Graph API approach ##########
+
+#region Check for PowerShell version compatibility with required modules ###########
+if ($boolUseGraphAPIModule -eq $true) {
+    #TODO: Code Graph API Module approach
+} else {
+    # Graph API REST approach
+    # Check for PowerShell version compatible with AzureAD module ################
+    if ($boolWindowsPowerShell -eq $false -and $boolAzureCloudShell -eq $false) {
+        if ($boolNonWindowsPlatform) {
+            Write-Warning 'This script is only compatible with Windows or an Azure Cloud Shell environment. Please switch to one of these platforms and try again.'
+            return # Quit script
+        } else {
+            # Windows platform, but not Windows PowerShell
+            Write-Warning 'This script is designed to run from Windows PowerShell. Please switch to Windows PowerShell and try again.'
+            return # Quit script
+        }
+    }
+}
+#endregion Check for PowerShell version compatibility with required modules ###########
 
 #region Authentication #############################################################
+if ($boolUseGraphAPIModule -eq $true) {
+    #TODO: Code Graph API Module approach
+} else {
+    # Graph API REST approach
+    # Checking if hashtableAuthToken exists before running authentication
+    if ($global:hashtableAuthToken) {
 
-# Checking if hashtableAuthToken exists before running authentication
-if ($global:hashtableAuthToken) {
+        # Setting DateTime to Universal time to work in all timezones
+        $datetimeUTC = (Get-Date).ToUniversalTime()
 
-    # Setting DateTime to Universal time to work in all timezones
-    $datetimeUTC = (Get-Date).ToUniversalTime()
+        # If the hashtableAuthToken exists checking when it expires
+        $intMinutesSinceTokenExpiration = ($datetimeUTC - $hashtableAuthToken.ExpiresOn.Datetime).Minutes
 
-    # If the hashtableAuthToken exists checking when it expires
-    $intMinutesSinceTokenExpiration = ($datetimeUTC - $hashtableAuthToken.ExpiresOn.Datetime).Minutes
+        if ($intMinutesSinceTokenExpiration -ge 0) {
+            Write-Output ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago')
 
-    if ($intMinutesSinceTokenExpiration -ge 0) {
-        Write-Output ('Authentication Token expired ' + $intMinutesSinceTokenExpiration + ' minutes ago')
+            # Defining User Principal Name if not present
 
-        # Defining User Principal Name if not present
+            while ([string]::IsNullOrEmpty($UserPrincipalName)) {
+                $UserPrincipalName = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
+            }
+
+            $global:hashtableAuthToken = Get-AuthToken -User $UserPrincipalName
+        }
+    } else {
+        # Authentication doesn't exist, calling Get-AuthToken function
 
         while ([string]::IsNullOrEmpty($UserPrincipalName)) {
             $UserPrincipalName = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
         }
 
+        # Getting the authorization token
         $global:hashtableAuthToken = Get-AuthToken -User $UserPrincipalName
     }
-} else {
-    # Authentication doesn't exist, calling Get-AuthToken function
-
-    while ([string]::IsNullOrEmpty($UserPrincipalName)) {
-        $UserPrincipalName = Read-Host -Prompt 'Please specify your user principal name for Azure authentication'
-    }
-
-    # Getting the authorization token
-    $global:hashtableAuthToken = Get-AuthToken -User $UserPrincipalName
 }
-
 #endregion Authentication #############################################################
 
 #region GetExportPath ##############################################################
-
 $strExportPath = $null
 if ([string]::IsNullOrEmpty($ExportPath) -eq $false) {
     # Replace quotes for Test-Path
@@ -395,14 +427,18 @@ while ($null -eq $strExportPath) {
         Write-Warning 'Invalid path! Please try again...'
     }
 }
-
 #endregion GetExportPath ##############################################################
 
-# Filtering out iOS and Windows Software Update Policies
-$arrPSCustomObjectDeviceConfigurationPolicies = @(Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
-foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectDeviceConfigurationPolicies) {
-    Write-Verbose ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName)
-    Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strExportPath
+if ($boolUseGraphAPIModule -eq $true) {
+    #TODO: Code Graph API Module approach
+} else {
+    # Graph API REST approach
+    # Filtering out iOS and Windows Software Update Policies
+    $arrPSCustomObjectDeviceConfigurationPolicies = @(Get-DeviceConfigurationPolicy | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
+    foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectDeviceConfigurationPolicies) {
+        Write-Verbose ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName)
+        Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strExportPath
+    }
 }
 
 Write-Output 'Device configuration policy export script completed.'
