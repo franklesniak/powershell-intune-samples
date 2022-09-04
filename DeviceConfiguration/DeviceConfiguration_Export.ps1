@@ -11,10 +11,11 @@ param (
     [Parameter(Mandatory = $false)][String]$ExportPath,
     [Parameter(Mandatory = $false)][String]$UserPrincipalName,
     [Parameter(Mandatory = $false)][Switch]$UseGraphAPIModule,
-    [Parameter(Mandatory = $false)][Switch]$UseGraphAPIREST
+    [Parameter(Mandatory = $false)][Switch]$UseGraphAPIREST,
+    [Parameter(Mandatory = $false)][Switch]$DoNotCheckForModuleUpdates
 )
 
-$strThisScriptVersionNumber = [version]'1.1.20220903.0'
+$strThisScriptVersionNumber = [version]'1.2.20220903.0'
 
 ####################################################
 
@@ -334,6 +335,58 @@ if ($boolUseGraphAPIModule -eq $true) {
     }
 }
 #endregion Check for PowerShell version compatibility with required modules ###########
+
+#region Check for PowerShell module updates ########################################
+if ($DoNotCheckForModuleUpdates.IsPresent -eq $false) {
+    if ($boolUseGraphAPIModule -eq $true) {
+        #TODO: Code Graph API Module approach
+    } else {
+        Write-Verbose 'Checking for module updates...'
+        $versionNewestInstalledAzureADModule = (($arrModuleAzureAD + $arrModuleAzureADPreview) | ForEach-Object { [version]($_.Version) } | Sort-Object)[-1]
+
+        $arrModuleNewestInstalledAzureAD = @(($arrModuleAzureAD + $arrModuleAzureADPreview) | Where-Object { ([version]($_.Version)) -eq $versionNewestInstalledAzureADModule })
+
+        # In the event there are multiple installations of the same version, reduce to a
+        # single instance of the module
+        if ($arrModuleNewestInstalledAzureAD.Count -gt 1) {
+            $moduleNewestInstalledAzureAD = @($arrModuleNewestInstalledAzureAD | Select-Object -Unique)[0]
+        } else {
+            $moduleNewestInstalledAzureAD = $arrModuleNewestInstalledAzureAD[0]
+        }
+
+        $moduleNewestAvailableAzureAD = Find-Module -Name 'AzureAD' -ErrorAction SilentlyContinue
+        $moduleNewestAvailableAzureADPreview = Find-Module -Name 'AzureADPreview' -ErrorAction SilentlyContinue
+
+        if ($null -ne $moduleNewestAvailableAzureAD) {
+            if ($moduleNewestAvailableAzureAD.Version -gt $moduleNewestInstalledAzureAD.Version) {
+                Write-Warning ('A newer version of the AzureAD PowerShell module is available. Script execution will continue, but please consider updating it by running the following command:' + [System.Environment]::NewLine + 'Install-Module AzureAD -Force' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
+            } elseif ($moduleNewestAvailableAzureAD.Version -eq $moduleNewestInstalledAzureAD.Version) {
+                # Currently installed AzureAD module is the newest production release available
+                if ($null -ne $moduleNewestAvailableAzureADPreview) {
+                    if ($moduleNewestAvailableAzureADPreview.Version -gt $moduleNewestInstalledAzureAD.Version) {
+                        Write-Warning ('While your system has the current production release of the AzureAD module installed, it may benefit from installing the newer, preview release of the AzureADPreview module. Script execution will continue, but you may consider installing the preview module by running the following command:' + [System.Environment]::NewLine + 'Install-Module AzureADPreview -Force' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
+                    }
+                }
+            } else {
+                # Currently installed AzureAD module is newer than the newest production release available
+                # Therefore, the user is using the AzureADPreview release
+                if ($null -ne $moduleNewestAvailableAzureADPreview) {
+                    if ($moduleNewestAvailableAzureADPreview.Version -gt $moduleNewestInstalledAzureAD.Version) {
+                        Write-Warning ('A newer version of the AzureADPreview PowerShell module is available. Script execution will continue, but please consider updating it by running the following command:' + [System.Environment]::NewLine + 'Install-Module AzureAD -Force' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
+                    }
+                }
+            }
+        } else {
+            # Couldn't find the AzureAD module in the PowerShell Gallery
+            if ($null -ne $moduleNewestAvailableAzureADPreview) {
+                if ($moduleNewestAvailableAzureADPreview.Version -gt $moduleNewestInstalledAzureAD.Version) {
+                    Write-Warning ('A newer version of the AzureADPreview PowerShell module is available. Script execution will continue, but please consider updating it by running the following command:' + [System.Environment]::NewLine + 'Install-Module AzureAD -Force' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
+                }
+            }
+        }
+    }
+}
+#endregion Check for PowerShell module updates ########################################
 
 #region Authentication #############################################################
 if ($boolUseGraphAPIModule -eq $true) {
