@@ -198,10 +198,8 @@ function Get-TemplateBasedDeviceConfigurationProfile {
     if (($UseGraphAPIModule.IsPresent) -or ($UseGraphAPIREST.IsPresent -eq $false)) {
         # Either the user specified to use the Graph API Module or the user did not specify
         # to use the Graph API REST interface
-        Write-Verbose 'Using Graph API Module approach...'
         $boolUseGraphAPIModule = $true
     } else {
-        Write-Verbose 'Using Graph API REST approach...'
         $boolUseGraphAPIModule = $false
     }
 
