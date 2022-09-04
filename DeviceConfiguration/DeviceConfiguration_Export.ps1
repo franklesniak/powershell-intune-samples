@@ -369,6 +369,7 @@ if ($boolUseGraphAPIModule -eq $true) {
     # Using Graph API Module approach
     $arrModuleGraphAuthentication = @() # Microsoft.Graph.Authentication
     $arrModuleGraphDeviceManagement = @() # Microsoft.Graph.DeviceManagement
+    $arrModuleGraphDevicesCorporateManagement = @() # Microsoft.Graph.Devices.CorporateManagement
 
     Write-Verbose 'Checking for Microsoft.Graph.Authentication module...'
     $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
@@ -385,6 +386,15 @@ if ($boolUseGraphAPIModule -eq $true) {
     $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
     if ($arrModuleGraphDeviceManagement.Count -eq 0) {
         Write-Warning ('Microsoft.Graph.DeviceManagement module not found. Please install the full Microsoft.Graph module and then try again.' + [System.Environment]::NewLine + 'You can install the Microsoft.Graph PowerShell module from the PowerShell Gallery by running the following command:' + [System.Environment]::NewLine + 'Install-Module Microsoft.Graph' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
+        return # Quit script
+    }
+
+    Write-Verbose 'Checking for Microsoft.Graph.Devices.CorporateManagement module...'
+    $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
+    $arrModuleGraphDevicesCorporateManagement = @(Get-Module -Name 'Microsoft.Graph.Devices.CorporateManagement' -ListAvailable)
+    $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
+    if ($arrModuleGraphDevicesCorporateManagement.Count -eq 0) {
+        Write-Warning ('Microsoft.Graph.Devices.CorporateManagement module not found. Please install the full Microsoft.Graph module and then try again.' + [System.Environment]::NewLine + 'You can install the Microsoft.Graph PowerShell module from the PowerShell Gallery by running the following command:' + [System.Environment]::NewLine + 'Install-Module Microsoft.Graph' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
         return # Quit script
     }
 } else {
