@@ -274,16 +274,17 @@ if ($PlatformID -eq [System.PlatformID]::Unix) {
 if ($boolWindowsPowerShell -eq $false -and $boolAzureCloudShell -eq $false) {
     if ($boolNonWindowsPlatform) {
         Write-Warning 'This script is only compatible with Windows or an Azure Cloud Shell environment. Please switch to one of these platforms and try again.'
-        break
+        return # Quit script
     } else {
         # Windows platform, but not Windows PowerShell
         Write-Warning 'This script is designed to run from Windows PowerShell. Please switch to Windows PowerShell and try again.'
+        return # Quit script
     }
 }
 
 if ($versionPowerShell -lt [version]'3.0') {
     Write-Warning 'This script requires PowerShell v3 or higher. Please upgrade to PowerShell v3 or higher and try again.'
-    break
+    return # Quit script
 }
 #endregion Check for PowerShell version compatible with AzureAD module ################
 
