@@ -299,9 +299,29 @@ if ($versionPowerShell -lt [version]'3.0') {
 
 #region Check for required PowerShell modules based on Graph API approach ##########
 if ($boolUseGraphAPIModule -eq $true) {
-    #TODO: Code Graph API Module approach
+    # Using Graph API Module approach
+    $arrModuleGraphAPIAuthentication = @() # Microsoft.Graph.Authentication
+    $arrModuleGraphDeviceManagement = @() # Microsoft.Graph.DeviceManagement
+
+    Write-Verbose 'Checking for Microsoft.Graph.Authentication module...'
+    $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
+    $arrModuleGraphAPIAuthentication = @(Get-Module -Name 'Microsoft.Graph.Authentication' -ListAvailable)
+    $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
+    if ($arrModuleGraphAPIAuthentication.Count -eq 0) {
+        Write-Warning ('Microsoft.Graph.Authentication module not found. Please install the full Microsoft.Graph module and then try again.' + [System.Environment]::NewLine + 'You can install the Microsoft.Graph PowerShell module from the PowerShell Gallery by running the following command:' + [System.Environment]::NewLine + 'Install-Module Microsoft.Graph' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
+        return # Quit script
+    }
+
+    Write-Verbose 'Checking for Microsoft.Graph.DeviceManagement module...'
+    $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
+    $arrModuleGraphDeviceManagement = @(Get-Module -Name 'Microsoft.Graph.DeviceManagement' -ListAvailable)
+    $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
+    if ($arrModuleGraphDeviceManagement.Count -eq 0) {
+        Write-Warning ('Microsoft.Graph.DeviceManagement module not found. Please install the full Microsoft.Graph module and then try again.' + [System.Environment]::NewLine + 'You can install the Microsoft.Graph PowerShell module from the PowerShell Gallery by running the following command:' + [System.Environment]::NewLine + 'Install-Module Microsoft.Graph' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
+        return # Quit script
+    }
 } else {
-    # Graph API REST approach
+    # Using Graph API REST approach
     $arrModuleAzureAD = @()
     $arrModuleAzureADPreview = @()
     Write-Verbose 'Checking for AzureAD module...'
