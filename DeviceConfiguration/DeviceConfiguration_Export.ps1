@@ -130,6 +130,108 @@ function Get-AuthToken {
 
 ####################################################
 
+function Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile {
+    <#
+    .SYNOPSIS
+    This function is used to get device configuration profiles from the Graph API REST interface that target Android Enterprise OEMConfigs.
+    .DESCRIPTION
+    The function connects to the Graph API interface and gets any device configuration profiles built targeting Android Enterprise OEMConfigs.
+    A non-exhaustive list of the device configuration profiles retrieved by this function are:
+    .EXAMPLE
+    Get-TemplateBasedDeviceConfigurationProfile
+    Returns any device configuration policies configured in Intune
+    .NOTES
+    This function does not retrieve the following device configuration profiles (note: list is non-exhaustive):
+    macOS - Settings Catalog
+    macOS - Templates - Custom
+    macOS - Templates - Device Features
+    macOS - Templates - Device Restrictions
+    macOS - Templates - Endpoint Protection
+    macOS - Templates - Extensions
+    macOS - Templates - PKCS Certificate
+    macOS - Templates - PKCS Imported Certificate
+    macOS - Templates - Preference File
+    macOS - Templates - SCEP Certificate
+    macOS - Templates - Trusted Certificate
+    macOS - Templates - VPN
+    macOS - Templates - Wi-Fi
+    macOS - Templates - Wired Network
+    Win10+ - Settings Catalog
+    Win10+ - Templates - Administrative Templates
+    Win10+ - Templates - Custom
+    Win10+ - Templates - Delivery Optimization
+    Win10+ - Templates - Device Firmware Configuration Interface
+    Win10+ - Templates - Device Restrictions
+    Win10+ - Templates - Device Restrictions (Win10 Team)
+    Win10+ - Templates - Domain Join
+    Win10+ - Templates - Edition Upgrade and Mode Switch
+    Win10+ - Templates - Email
+    Win10+ - Templates - Endpoint Protection
+    Win10+ - Templates - Identity Protection
+    Win10+ - Templates - Imported Administrative Templates
+    Win10+ - Templates - Kiosk
+    Win10+ - Templates - MS Defender for Endpoint
+    Win10+ - Templates - Network Boundary
+    Win10+ - Templates - PKCS Certificate
+    Win10+ - Templates - PKCS Imported Certificate
+    Win10+ - Templates - SCEP Certificate
+    Win10+ - Templates - Secure Assessment (Education)
+    Win10+ - Templates - Shared Multi-User Device
+    Win10+ - Templates - Trusted Certificate
+    Win10+ - Templates - VPN
+    Win10+ - Templates - Wi-Fi
+    Win10+ - Templates - Windows Health Monitoring
+    Win10+ - Templates - Wired Network
+    Win8.1+ - Device Restriction
+    Win8.1+ - SCEP Certificate
+    Win8.1+ - Trusted Certificate
+    Win8.1+ - VPN
+    Win8.1+ - Wi-Fi
+    #>
+
+    [cmdletbinding()]
+    param (
+        [Parameter(Mandatory = $false)][Switch]$UseGraphAPIModule,
+        [Parameter(Mandatory = $false)][Switch]$UseGraphAPIREST
+    )
+
+    if (($UseGraphAPIModule.IsPresent) -or ($UseGraphAPIREST.IsPresent -eq $false)) {
+        # Either the user specified to use the Graph API Module or the user did not specify
+        # to use the Graph API REST interface
+        $boolUseGraphAPIModule = $true
+    } else {
+        $boolUseGraphAPIModule = $false
+    }
+
+    if ($boolUseGraphAPIModule) {
+        #TODO: Using the Graph API Module approach
+        # Get-MgDeviceAppMgtMobileAppConfiguration -Filter "microsoft.graph.androidManagedStoreAppConfiguration/appSupportsOemConfig%20eq%20true"
+    } else {
+        # Using the Graph API REST approach
+        $strGraphAPIVersion = 'beta'
+        $strDCPResource = 'deviceAppManagement/mobileAppConfigurations'
+        $strGraphAPIQueryString = '$filter=microsoft.graph.androidManagedStoreAppConfiguration/appSupportsOemConfig%20eq%20true'
+
+        try {
+            $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource + '?' + $strGraphAPIQueryString
+            return (Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value
+        } catch {
+            $ex = $_.Exception
+            $errorResponse = $ex.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($errorResponse)
+            $reader.BaseStream.Position = 0
+            $reader.DiscardBufferedData()
+            $responseBody = $reader.ReadToEnd();
+            if ($versionPowerShell -ge [version]'5.0') {
+                Write-Information ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+            } else {
+                Write-Verbose ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+            }
+            return $null
+        }
+    }
+}
+
 function Get-TemplateBasedDeviceConfigurationProfile {
     <#
     .SYNOPSIS
@@ -596,10 +698,13 @@ if ($boolUseGraphAPIModule -eq $true) {
     # Graph API REST approach
     # Filtering out iOS and Windows Software Update Policies
     $arrPSCustomObjectDeviceConfigurationPolicies = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
+    $arrPSCustomObjectAndroidEnterpriseOEMConfigPolicies = @(Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile -UseGraphAPIREST)
     foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectDeviceConfigurationPolicies) {
         Write-Verbose ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName)
+        #TODO: write this to a subfolder
         Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strExportPath
     }
+    #TODO: export $arrPSCustomObjectAndroidEnterpriseOEMConfigPolicies
 }
 
 Write-Output 'Device configuration policy export script completed.'
