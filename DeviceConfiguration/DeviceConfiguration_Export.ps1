@@ -17,6 +17,8 @@ param (
 
 $strThisScriptVersionNumber = [version]'1.2.20220903.0'
 
+$script:VerbosePreferenceAtStartOfScript = $VerbosePreference
+
 ####################################################
 
 function Get-AuthToken {
@@ -303,15 +305,19 @@ if ($boolUseGraphAPIModule -eq $true) {
     $arrModuleAzureAD = @()
     $arrModuleAzureADPreview = @()
     Write-Verbose 'Checking for AzureAD module...'
+    $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
     $arrModuleAzureAD = @(Get-Module -Name 'AzureAD' -ListAvailable)
+    $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
 
     if ($arrModuleAzureAD.Count -eq 0) {
         Write-Verbose 'AzureAD PowerShell module not found, looking for AzureADPreview'
+        $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
         $arrModuleAzureADPreview = @(Get-Module -Name 'AzureADPreview' -ListAvailable)
+        $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
     }
 
     if (($arrModuleAzureAD.Count -eq 0) -and ($arrModuleAzureADPreview.Count -eq 0)) {
-        Write-Warning ('This script requires the AzureAD or AzureADPreview Powershell module. Please install it and then try again.' + [System.Environment]::NewLine + 'You can install the AzureAD PowerShell module from the PowerShell Gallery by running the following command:' + [System.Environment]::NewLine + 'Install-Module AzureAD' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
+        Write-Warning ('This script requires the AzureAD or AzureADPreview Powershell module. Please install one and then try again.' + [System.Environment]::NewLine + 'You can install the AzureAD PowerShell module from the PowerShell Gallery by running the following command:' + [System.Environment]::NewLine + 'Install-Module AzureAD' + [System.Environment]::NewLine + [System.Environment]::NewLine + 'If the installation command fails, you may need to upgrade the version of PowerShellGet. To do so, run the following commands, then restart PowerShell:' + [System.Environment]::NewLine + 'Set-ExecutionPolicy Bypass -Scope Process -Force' + [System.Environment]::NewLine + '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12' + [System.Environment]::NewLine + 'Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force' + [System.Environment]::NewLine + 'Install-Module PowerShellGet -MinimumVersion 2.2.4 -SkipPublisherCheck -Force -AllowClobber')
         return # Quit script
     }
 }
@@ -354,8 +360,10 @@ if ($DoNotCheckForModuleUpdates.IsPresent -eq $false) {
             $moduleNewestInstalledAzureAD = $arrModuleNewestInstalledAzureAD[0]
         }
 
+        $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
         $moduleNewestAvailableAzureAD = Find-Module -Name 'AzureAD' -ErrorAction SilentlyContinue
         $moduleNewestAvailableAzureADPreview = Find-Module -Name 'AzureADPreview' -ErrorAction SilentlyContinue
+        $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
 
         if ($null -ne $moduleNewestAvailableAzureAD) {
             if ($moduleNewestAvailableAzureAD.Version -gt $moduleNewestInstalledAzureAD.Version) {
