@@ -280,6 +280,11 @@ if ($boolWindowsPowerShell -eq $false -and $boolAzureCloudShell -eq $false) {
         Write-Warning 'This script is designed to run from Windows PowerShell. Please switch to Windows PowerShell and try again.'
     }
 }
+
+if ($versionPowerShell -lt [version]'3.0') {
+    Write-Warning 'This script requires PowerShell v3 or higher. Please upgrade to PowerShell v3 or higher and try again.'
+    break
+}
 #endregion Check for PowerShell version compatible with AzureAD module ################
 
 #region Authentication #############################################################
