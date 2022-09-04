@@ -136,57 +136,11 @@ function Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile {
     This function is used to get device configuration profiles from the Graph API REST interface that target Android Enterprise OEMConfigs.
     .DESCRIPTION
     The function connects to the Graph API interface and gets any device configuration profiles built targeting Android Enterprise OEMConfigs.
-    A non-exhaustive list of the device configuration profiles retrieved by this function are:
     .EXAMPLE
-    Get-TemplateBasedDeviceConfigurationProfile
-    Returns any device configuration policies configured in Intune
+    Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile
+    Returns any Android Enterprise OEMConfig device configuration profiles configured in Intune
     .NOTES
-    This function does not retrieve the following device configuration profiles (note: list is non-exhaustive):
-    macOS - Settings Catalog
-    macOS - Templates - Custom
-    macOS - Templates - Device Features
-    macOS - Templates - Device Restrictions
-    macOS - Templates - Endpoint Protection
-    macOS - Templates - Extensions
-    macOS - Templates - PKCS Certificate
-    macOS - Templates - PKCS Imported Certificate
-    macOS - Templates - Preference File
-    macOS - Templates - SCEP Certificate
-    macOS - Templates - Trusted Certificate
-    macOS - Templates - VPN
-    macOS - Templates - Wi-Fi
-    macOS - Templates - Wired Network
-    Win10+ - Settings Catalog
-    Win10+ - Templates - Administrative Templates
-    Win10+ - Templates - Custom
-    Win10+ - Templates - Delivery Optimization
-    Win10+ - Templates - Device Firmware Configuration Interface
-    Win10+ - Templates - Device Restrictions
-    Win10+ - Templates - Device Restrictions (Win10 Team)
-    Win10+ - Templates - Domain Join
-    Win10+ - Templates - Edition Upgrade and Mode Switch
-    Win10+ - Templates - Email
-    Win10+ - Templates - Endpoint Protection
-    Win10+ - Templates - Identity Protection
-    Win10+ - Templates - Imported Administrative Templates
-    Win10+ - Templates - Kiosk
-    Win10+ - Templates - MS Defender for Endpoint
-    Win10+ - Templates - Network Boundary
-    Win10+ - Templates - PKCS Certificate
-    Win10+ - Templates - PKCS Imported Certificate
-    Win10+ - Templates - SCEP Certificate
-    Win10+ - Templates - Secure Assessment (Education)
-    Win10+ - Templates - Shared Multi-User Device
-    Win10+ - Templates - Trusted Certificate
-    Win10+ - Templates - VPN
-    Win10+ - Templates - Wi-Fi
-    Win10+ - Templates - Windows Health Monitoring
-    Win10+ - Templates - Wired Network
-    Win8.1+ - Device Restriction
-    Win8.1+ - SCEP Certificate
-    Win8.1+ - Trusted Certificate
-    Win8.1+ - VPN
-    Win8.1+ - Wi-Fi
+    Filters to just microsoft.graph.androidManagedStoreAppConfiguration objects where appSupportsOemConfig -eq $true
     #>
 
     [cmdletbinding()]
@@ -282,7 +236,7 @@ function Get-TemplateBasedDeviceConfigurationProfile {
     Win8.1+ - Wi-Fi
     .EXAMPLE
     Get-TemplateBasedDeviceConfigurationProfile
-    Returns any device configuration policies configured in Intune
+    Returns any device configuration profiles configured in Intune
     .NOTES
     This function does not retrieve the following device configuration profiles (note: list is non-exhaustive):
     macOS - Settings Catalog
