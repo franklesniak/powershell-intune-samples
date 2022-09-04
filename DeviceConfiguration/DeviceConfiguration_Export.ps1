@@ -210,6 +210,66 @@ function Export-JSONData {
 
 ####################################################
 
+#region Detect PowerShell Environment ##############################################
+# (i.e., Windows PowerShell, PowerShell 6.0+, Azure Cloud Shell)
+$boolAzureCloudShell = $false
+$boolNonWindowsPlatform = $false
+$boolWindowsPowerShell = $false
+$versionPowerShell = $null
+$PlatformID = [System.Environment]::OSVersion.Platform
+if ($PlatformID -eq [System.PlatformID]::Unix) {
+    # Linux / Unix / FreeBSD
+    $boolNonWindowsPlatform = $true
+    # $boolWindowsPowerShell = $false
+
+    $versionPowerShell = $PSVersionTable.PSVersion
+
+    # Check for Cloud Shell
+    $boolAzureCloudShell = $false
+    if (Test-Path env:"ACC_CLOUD") {
+        if ((Get-Item env:"ACC_CLOUD").Value -eq "PROD") {
+            $boolAzureCloudShell = $true
+        }
+    }
+} elseif ($PlatformID -ne [System.PlatformID]::Win32NT) {
+    # Not "Unix", i.e., Unix, Linux, or FreeBSD
+    # Also not Windows
+    $boolNonWindowsPlatform = $true
+    # $boolWindowsPowerShell = $false
+
+    if ((Test-Path variable:\PSVersionTable) -eq $true) {
+        # $PSVersionTable exists
+        $versionPowerShell = $PSVersionTable.PSVersion
+    }
+} else {
+    # Windows OS
+    # $boolNonWindowsPlatform = $false
+
+    if ((Test-Path variable:\PSVersionTable) -eq $false) {
+        # $PSVersionTable variable does not exist
+        # Must be PowerShell v1
+        $versionPowerShell = [version]'1.0'
+        $boolWindowsPowerShell = $true
+    } else {
+        # $PSVersionTable variable exists; use it
+        $versionPowerShell = $PSVersionTable.PSVersion
+
+        if ($null -eq $PSVersionTable.PSEdition) {
+            # No knowledge of "Edition" of PowerShell; must be 5.1 or older
+            $boolWindowsPowerShell = $true
+        } else {
+            if ($PSVersionTable.PSEdition -eq "Desktop") {
+                # Windows PowerShell
+                $boolWindowsPowerShell = $true
+            } else {
+                # Must be PowerShell Core or something else
+                # $boolWindowsPowerShell = $false
+            }
+        }
+    }
+}
+#endregion Detect PowerShell Environment ##############################################
+
 #region Authentication #############################################################
 
 # Checking if hashtableAuthToken exists before running authentication
