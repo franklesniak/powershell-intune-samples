@@ -9,7 +9,9 @@ See LICENSE in the project root for license information.
 [cmdletbinding()]
 param (
     [Parameter(Mandatory = $false)][String]$ExportPath,
-    [Parameter(Mandatory = $false)][String]$UserPrincipalName
+    [Parameter(Mandatory = $false)][String]$UserPrincipalName,
+    [Parameter(Mandatory = $false)][Switch]$UseGraphAPIModule,
+    [Parameter(Mandatory = $false)][Switch]$UseGraphAPIREST
 )
 
 $strThisScriptVersionNumber = [version]'1.1.20220903.0'
@@ -209,6 +211,21 @@ function Export-JSONData {
 }
 
 ####################################################
+
+#region Detect Which Graph API Approach Will Be Used ###############################
+if (($UseGraphAPIModule.IsPresent) -or ($UseGraphAPIREST.IsPresent -eq $false)) {
+    # Either the user specified to use the Graph API Module or the user did not specify
+    # to use the Graph API REST interface
+    Write-Verbose 'Using Graph API Module approach...'
+    $boolUseGraphAPIModule = $true
+} else {
+    Write-Verbose 'Using Graph API REST approach...'
+    $boolUseGraphAPIModule = $false
+}
+#endregion Detect Which Graph API Approach Will Be Used ###############################
+
+#TODO: Remove this!
+$boolUseGraphAPIModule = $false # Temporary to keep script working while we code Graph API Module approach
 
 #region Detect PowerShell Environment ##############################################
 # (i.e., Windows PowerShell, PowerShell 6.0+, Azure Cloud Shell)
