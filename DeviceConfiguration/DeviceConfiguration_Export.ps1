@@ -585,7 +585,7 @@ if ($boolUseGraphAPIModule -eq $true) {
 } else {
     # Graph API REST approach
     # Filtering out iOS and Windows Software Update Policies
-    $arrPSCustomObjectDeviceConfigurationPolicies = @(Get-TemplateBasedDeviceConfigurationProfile | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
+    $arrPSCustomObjectDeviceConfigurationPolicies = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
     foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectDeviceConfigurationPolicies) {
         Write-Verbose ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName)
         Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strExportPath
