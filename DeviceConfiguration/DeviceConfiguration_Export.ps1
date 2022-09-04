@@ -345,7 +345,10 @@ if ($boolUseGraphAPIModule -eq $true) {
 
 #region Check for PowerShell version compatibility with required modules ###########
 if ($boolUseGraphAPIModule -eq $true) {
-    #TODO: Code Graph API Module approach
+    if ($versionPowerShell -lt [version]'5.1') {
+        Write-Warning 'This script requires PowerShell v5.1 or higher. Please upgrade to PowerShell v5.1 or higher and try again.'
+        return # Quit script
+    }
 } else {
     # Graph API REST approach
     # Check for PowerShell version compatible with AzureAD module ################
