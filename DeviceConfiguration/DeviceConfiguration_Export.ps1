@@ -168,7 +168,9 @@ function Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile {
 
         try {
             $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource + '?' + $strGraphAPIQueryString
+            $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
             return (Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value
+            $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
         } catch {
             $ex = $_.Exception
             $errorResponse = $ex.Response.GetResponseStream()
@@ -372,7 +374,9 @@ function Get-TemplateBasedDeviceConfigurationProfile {
 
         try {
             $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
+            $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
             return (Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value
+            $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
         } catch {
             $ex = $_.Exception
             $errorResponse = $ex.Response.GetResponseStream()
