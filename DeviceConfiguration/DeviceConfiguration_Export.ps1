@@ -261,6 +261,7 @@ function Get-TemplateBasedDeviceConfigurationProfile {
 
     if ($boolUseGraphAPIModule) {
         #TODO: Using the Graph API Module approach
+        # Get-MgDeviceManagementDeviceConfiguration
     } else {
         # Using the Graph API REST approach
         $strGraphAPIVersion = 'Beta'
