@@ -861,6 +861,46 @@ while ($null -eq $strExportPath) {
 }
 #endregion GetExportPath ##############################################################
 
+#region CreateSubfoldersIfNecessary ################################################
+$strAndroidEnterpriseOEMConfigProfilesSubfolder = Join-Path $strExportPath 'AndroidEnterpriseOEMConfig'
+$strSettingsCatalogBasedProfilesSubfolder = Join-Path $strExportPath 'SettingsCatalogBased'
+$strGroupPolicyBasedProfilesSubfolder = Join-Path $strExportPath 'GroupPolicyBased'
+$strTemplateBasedProfilesSubfolder = Join-Path $strExportPath 'TemplateBased'
+
+if (-not (Test-Path -Path $strAndroidEnterpriseOEMConfigProfilesSubfolder -Type Container)) {
+    New-Item -ItemType Directory -Path $strAndroidEnterpriseOEMConfigProfilesSubfolder -ErrorAction SilentlyContinue | Out-Null
+}
+if (-not (Test-Path -Path $strSettingsCatalogBasedProfilesSubfolder -Type Container)) {
+    New-Item -ItemType Directory -Path $strSettingsCatalogBasedProfilesSubfolder -ErrorAction SilentlyContinue | Out-Null
+}
+if (-not (Test-Path -Path $strGroupPolicyBasedProfilesSubfolder -Type Container)) {
+    New-Item -ItemType Directory -Path $strGroupPolicyBasedProfilesSubfolder -ErrorAction SilentlyContinue | Out-Null
+}
+if (-not (Test-Path -Path $strTemplateBasedProfilesSubfolder -Type Container)) {
+    New-Item -ItemType Directory -Path $strTemplateBasedProfilesSubfolder -ErrorAction SilentlyContinue | Out-Null
+}
+
+if (-not (Test-Path -Path $strAndroidEnterpriseOEMConfigProfilesSubfolder -Type Container)) {
+    Write-Warning ('Creation of Android Enterprise OEMConfig profiles subfolder failed... unable to proceed. Please create the folder "' + $strAndroidEnterpriseOEMConfigProfilesSubfolder + '" manually and try again.')
+    return
+}
+
+if (-not (Test-Path -Path $strSettingsCatalogBasedProfilesSubfolder -Type Container)) {
+    Write-Warning ('Creation of settings catalog-based profiles subfolder failed... unable to proceed. Please create the folder "' + $strSettingsCatalogBasedProfilesSubfolder + '" manually and try again.')
+    return
+}
+
+if (-not (Test-Path -Path $strGroupPolicyBasedProfilesSubfolder -Type Container)) {
+    Write-Warning ('Creation of Group Policy-based profiles subfolder failed... unable to proceed. Please create the folder "' + $strGroupPolicyBasedProfilesSubfolder + '" manually and try again.')
+    return
+}
+
+if (-not (Test-Path -Path $strTemplateBasedProfilesSubfolder -Type Container)) {
+    Write-Warning ('Creation of template-based profiles subfolder failed... unable to proceed. Please create the folder "' + $strTemplateBasedProfilesSubfolder + '" manually and try again.')
+    return
+}
+#endregion CreateSubfoldersIfNecessary ################################################
+
 if ($boolUseGraphAPIModule -eq $true) {
     #TODO: Code Graph API Module approach
 } else {
@@ -869,15 +909,14 @@ if ($boolUseGraphAPIModule -eq $true) {
     $arrPSCustomObjectSettingsCatalogBasedProfiles = @(Get-SettingsCatalogBasedDeviceConfigurationProfile -UseGraphAPIREST)
     $arrPSCustomObjectGroupPolicyBasedProfiles = @(Get-GroupPolicyBasedDeviceConfigurationProfile -UseGraphAPIREST)
     # Filtering out iOS and Windows Software Update Policies
-    $arrPSCustomObjectDeviceConfigurationProfiles = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
+    $arrPSCustomObjectTemplateBasedProfiles = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
 
     #TODO: export $arrPSCustomObjectAndroidEnterpriseOEMConfigProfiles
     #TODO: export $arrPSCustomObjectSettingsCatalogBasedProfiles
     #TODO: export $arrPSCustomObjectGroupPolicyBasedProfiles
-    foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectDeviceConfigurationProfiles) {
+    foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectTemplateBasedProfiles) {
         Write-Verbose ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName)
-        #TODO: write this to a subfolder
-        Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strExportPath
+        Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strTemplateBasedProfilesSubfolder
     }
 }
 
