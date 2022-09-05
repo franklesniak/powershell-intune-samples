@@ -476,7 +476,7 @@ function Get-TemplateBasedDeviceConfigurationProfile {
         # Get-MgDeviceManagementDeviceConfiguration
     } else {
         # Using the Graph API REST approach
-        $strGraphAPIVersion = 'Beta'
+        $strGraphAPIVersion = 'beta'
         $strDCPResource = 'deviceManagement/deviceConfigurations'
 
         try {
