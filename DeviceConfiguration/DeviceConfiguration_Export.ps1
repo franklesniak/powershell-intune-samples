@@ -865,15 +865,20 @@ if ($boolUseGraphAPIModule -eq $true) {
     #TODO: Code Graph API Module approach
 } else {
     # Graph API REST approach
+    $arrPSCustomObjectAndroidEnterpriseOEMConfigProfiles = @(Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile -UseGraphAPIREST)
+    $arrPSCustomObjectSettingsCatalogBasedProfiles = @(Get-SettingsCatalogBasedDeviceConfigurationProfile -UseGraphAPIREST)
+    $arrPSCustomObjectGroupPolicyBasedProfiles = @(Get-GroupPolicyBasedDeviceConfigurationProfile -UseGraphAPIREST)
     # Filtering out iOS and Windows Software Update Policies
-    $arrPSCustomObjectDeviceConfigurationPolicies = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
-    $arrPSCustomObjectAndroidEnterpriseOEMConfigPolicies = @(Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile -UseGraphAPIREST)
-    foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectDeviceConfigurationPolicies) {
+    $arrPSCustomObjectDeviceConfigurationProfiles = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
+
+    #TODO: export $arrPSCustomObjectAndroidEnterpriseOEMConfigProfiles
+    #TODO: export $arrPSCustomObjectSettingsCatalogBasedProfiles
+    #TODO: export $arrPSCustomObjectGroupPolicyBasedProfiles
+    foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectDeviceConfigurationProfiles) {
         Write-Verbose ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName)
         #TODO: write this to a subfolder
         Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strExportPath
     }
-    #TODO: export $arrPSCustomObjectAndroidEnterpriseOEMConfigPolicies
 }
 
 Write-Output 'Device configuration policy export script completed.'
