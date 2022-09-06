@@ -526,16 +526,16 @@ function Export-JSONData {
     #>
 
     param (
-        $JSON,
-        $ExportPath,
-        $FileName
+        [Parameter(Mandatory = $true)]$JSON,
+        [Parameter(Mandatory = $true)][string]$ExportPath,
+        [Parameter(Mandatory = $true)][string]$FileName
     )
 
     try {
         if ([string]::IsNullOrEmpty($JSON)) {
             Write-Error 'No JSON specified, please specify valid JSON...'
             return
-        } elseif (!$ExportPath) {
+        } elseif ([string]::IsNullOrEmpty($ExportPath)) {
             Write-Error 'No export path parameter set, please provide a path to export the file'
             return
         } elseif (!(Test-Path $ExportPath)) {
