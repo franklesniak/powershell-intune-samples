@@ -15,6 +15,8 @@ param (
     [Parameter(Mandatory = $false)][Switch]$DoNotCheckForModuleUpdates
 )
 
+#TODO: rename this script to Export-DeviceConfigurationProfiles to comply with verb-noun naming convention
+
 $strThisScriptVersionNumber = [version]'1.2.20220903.0'
 
 $script:VerbosePreferenceAtStartOfScript = $VerbosePreference
