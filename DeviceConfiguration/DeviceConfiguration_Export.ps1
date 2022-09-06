@@ -557,8 +557,8 @@ function Export-JSONData {
 
             Write-Verbose ('Export Path: "' + $ExportPath + '"')
 
-            $strJSON | Set-Content -LiteralPath ($ExportPath + '\' + $strJSONExportFileName)
-            Write-Verbose ('JSON created in ' + $ExportPath + '\' + $strJSONExportFileName + '...')
+            $strJSON | Set-Content -LiteralPath (Join-Path $ExportPath $strJSONExportFileName)
+            Write-Verbose ('JSON created in ' + (Join-Path $ExportPath $strJSONExportFileName) + '...')
         }
     } catch {
         $_.Exception
