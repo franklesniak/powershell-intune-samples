@@ -47,11 +47,15 @@ function Get-AuthToken {
 
     Write-Verbose 'Checking for AzureAD module...'
 
+    $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
     $arrModuleAzureAD = @(Get-Module -Name 'AzureAD' -ListAvailable)
+    $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
 
     if ($arrModuleAzureAD.Count -eq 0) {
         Write-Verbose 'AzureAD PowerShell module not found, looking for AzureADPreview'
+        $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
         $arrModuleAzureAD = @(Get-Module -Name 'AzureADPreview' -ListAvailable)
+        $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
     }
 
     if ($arrModuleAzureAD.Count -eq 0) {
