@@ -908,8 +908,7 @@ if ($boolUseGraphAPIModule -eq $true) {
     $arrPSCustomObjectAndroidEnterpriseOEMConfigProfiles = @(Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile -UseGraphAPIREST)
     $arrPSCustomObjectSettingsCatalogBasedProfiles = @(Get-SettingsCatalogBasedDeviceConfigurationProfile -UseGraphAPIREST)
     $arrPSCustomObjectGroupPolicyBasedProfiles = @(Get-GroupPolicyBasedDeviceConfigurationProfile -UseGraphAPIREST)
-    # Filtering out iOS and Windows Software Update Policies
-    $arrPSCustomObjectTemplateBasedProfiles = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST | Where-Object { ($_.'@odata.type' -ne '#microsoft.graph.iosUpdateConfiguration') -and ($_.'@odata.type' -ne '#microsoft.graph.windowsUpdateForBusinessConfiguration') })
+    $arrPSCustomObjectTemplateBasedProfiles = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST)
 
     #TODO: export $arrPSCustomObjectAndroidEnterpriseOEMConfigProfiles
     #TODO: export $arrPSCustomObjectSettingsCatalogBasedProfiles
