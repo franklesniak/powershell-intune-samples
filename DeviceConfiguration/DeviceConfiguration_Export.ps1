@@ -903,6 +903,7 @@ if (-not (Test-Path -Path $strTemplateBasedProfilesSubfolder -Type Container)) {
 }
 #endregion CreateSubfoldersIfNecessary ################################################
 
+#region GetProfiles ################################################################
 if ($boolUseGraphAPIModule -eq $true) {
     #TODO: Code Graph API Module approach
 } else {
@@ -916,6 +917,14 @@ if ($boolUseGraphAPIModule -eq $true) {
     $arrPSCustomObjectSettingsCatalogBasedProfiles = @(Get-SettingsCatalogBasedDeviceConfigurationProfile -UseGraphAPIREST)
     $arrPSCustomObjectGroupPolicyBasedProfiles = @(Get-GroupPolicyBasedDeviceConfigurationProfile -UseGraphAPIREST)
     $arrPSCustomObjectTemplateBasedProfiles = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST)
+}
+#endregion GetProfiles ################################################################
+
+#region DetermineFileNamesAndDealWithDuplicates ####################################
+if ($boolUseGraphAPIModule -eq $true) {
+    #TODO: Code Graph API Module approach
+} else {
+    # Graph API REST approach
 
     # Check for duplicates and warn when one is found
     $hashtableAllDeviceConfigProfileFileNames = @{}
@@ -1496,6 +1505,14 @@ if ($boolUseGraphAPIModule -eq $true) {
             }
         }
     }
+}
+#endregion DetermineFileNamesAndDealWithDuplicates ####################################
+
+#region WriteOutput ################################################################
+if ($boolUseGraphAPIModule -eq $true) {
+    #TODO: Code Graph API Module approach
+} else {
+    # Graph API REST approach
 
     # Write output for Android Enterprise OEMConfig-based profiles
     $strSubfolder = $strAndroidEnterpriseOEMConfigProfilesSubfolder
@@ -1589,5 +1606,6 @@ if ($boolUseGraphAPIModule -eq $true) {
         Export-JSONData -JSON $pscustomobjectDeviceConfigProfile -ExportPath $strSubfolder -FileName $strFileName
     }
 }
+#endregion WriteOutput ################################################################
 
 Write-Output 'Device configuration policy export script completed.'
