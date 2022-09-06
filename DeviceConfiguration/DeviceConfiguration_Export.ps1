@@ -183,8 +183,12 @@ function Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile {
             $reader.BaseStream.Position = 0
             $reader.DiscardBufferedData()
             $responseBody = $reader.ReadToEnd();
-            if ($versionPowerShell -ge [version]'5.0') {
-                Write-Information ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+            if ($null -ne $script:versionPowerShell) {
+                if ($script:versionPowerShell -ge [version]'5.0') {
+                    Write-Information ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+                } else {
+                    Write-Verbose ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+                }
             } else {
                 Write-Verbose ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
             }
@@ -546,7 +550,7 @@ function Export-JSONData {
             $pscustomobjectConvertedJSON = $strJSON | ConvertFrom-Json
 
             $strJSON | Set-Content -LiteralPath (Join-Path $ExportPath $FileName)
-            Write-Verbose ('JSON created in ' + (Join-Path $ExportPath $FileName) + '...')
+            Write-Debug ('JSON created in ' + (Join-Path $ExportPath $FileName) + '...')
         }
     } catch {
         $_.Exception
@@ -1608,4 +1612,12 @@ if ($boolUseGraphAPIModule -eq $true) {
 }
 #endregion WriteOutput ################################################################
 
-Write-Output 'Device configuration policy export script completed.'
+if ($null -ne $script:versionPowerShell) {
+    if ($script:versionPowerShell -ge [version]'5.0') {
+        Write-Information 'Device configuration policy export script completed.'
+    } else {
+        Write-Output 'Device configuration policy export script completed.'
+    }
+} else {
+    Write-Output 'Device configuration policy export script completed.'
+}
