@@ -67,17 +67,16 @@ function Get-AuthToken {
     # If the module count is greater than 1 find the latest version
 
     if ($arrModuleAzureAD.Count -gt 1) {
+        $versionNewestInstalledAzureADModule = (($arrModuleAzureAD + $arrModuleAzureADPreview) | ForEach-Object { [version]($_.Version) } | Sort-Object)[-1]
 
-        $versionNewestInstalledAzureADModule = ($arrModuleAzureAD | Select-Object Version | Sort-Object)[-1]
+        $arrModuleNewestInstalledAzureAD = @(($arrModuleAzureAD + $arrModuleAzureADPreview) | Where-Object { ([version]($_.Version)) -eq $versionNewestInstalledAzureADModule })
 
-        $arrModuleNewestAzureAD = @($arrModuleAzureAD | Where-Object { $_.Version -eq $versionNewestInstalledAzureADModule.Version })
-
-        # Checking if there are multiple versions of the same module found
-
-        if ($arrModuleNewestAzureAD.Count -gt 1) {
-            $moduleAzureAD = @($arrModuleNewestAzureAD | Select-Object -Unique)[0]
+        # In the event there are multiple installations of the same version, reduce to a
+        # single instance of the module
+        if ($arrModuleNewestInstalledAzureAD.Count -gt 1) {
+            $moduleAzureAD = @($arrModuleNewestInstalledAzureAD | Select-Object -Unique)[0]
         } else {
-            $moduleAzureAD = $arrModuleNewestAzureAD[0]
+            $moduleAzureAD = $arrModuleNewestInstalledAzureAD[0]
         }
     } else {
         $moduleAzureAD = $arrModuleAzureAD[0]
