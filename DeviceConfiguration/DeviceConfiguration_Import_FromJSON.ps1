@@ -534,4 +534,12 @@ if ($boolUseGraphAPIModule -eq $true) {
 }
 #endregion PerformImport ##############################################################
 
-Write-Output ('Done adding Device Configuration Policy "' + $strDisplayName + '"')
+if ($null -ne $script:versionPowerShell) {
+    if ($script:versionPowerShell -ge [version]'5.0') {
+        Write-Information ('Done adding Device Configuration Policy "' + $strDisplayName + '"')
+    } else {
+        Write-Output ('Done adding Device Configuration Policy "' + $strDisplayName + '"')
+    }
+} else {
+    Write-Output ('Done adding Device Configuration Policy "' + $strDisplayName + '"')
+}
