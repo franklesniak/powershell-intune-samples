@@ -1495,9 +1495,76 @@ if ($boolUseGraphAPIModule -eq $true) {
         }
     }
 
-    #TODO: export $arrPSCustomObjectAndroidEnterpriseOEMConfigProfiles
-    #TODO: export $arrPSCustomObjectSettingsCatalogBasedProfiles
-    #TODO: export $arrPSCustomObjectGroupPolicyBasedProfiles
+    # Write output for Android Enterprise OEMConfig-based profiles
+    $strSubfolder = $strAndroidEnterpriseOEMConfigProfilesSubfolder
+    foreach ($strFileName in ($hashtableAndroidEnterpriseOEMConfigProfileFileNames.Keys)) {
+        $pscustomobjectDeviceConfigProfile = $hashtableAndroidEnterpriseOEMConfigProfileFileNames.Item($strFileName)
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.displayName) -eq $false) {
+            $strDisplayName = $pscustomobjectDeviceConfigProfile.displayName
+        } else {
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.name) -eq $false) {
+                $strDisplayName = $pscustomobjectDeviceConfigProfile.name
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+                    $strDisplayName = $pscustomobjectDeviceConfigProfile.id
+                } else {
+                    $strDisplayName = ''
+                }
+            }
+        }
+
+        Write-Verbose ('Exporting device configuration policy "' + $strDisplayName + '" to file "' + $strFileName + '".')
+        Export-JSONData -JSON $pscustomobjectDeviceConfigProfile -ExportPath $strSubfolder -FileName $strFileName
+    }
+
+    # Write output for settings catalog based profiles
+    $strSubfolder = $strSettingsCatalogBasedProfilesSubfolder
+    foreach ($strFileName in ($hashtableSettingsCatalogBasedProfileFileNames.Keys)) {
+        $pscustomobjectDeviceConfigProfile = $hashtableSettingsCatalogBasedProfileFileNames.Item($strFileName)
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.displayName) -eq $false) {
+            $strDisplayName = $pscustomobjectDeviceConfigProfile.displayName
+        } else {
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.name) -eq $false) {
+                $strDisplayName = $pscustomobjectDeviceConfigProfile.name
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+                    $strDisplayName = $pscustomobjectDeviceConfigProfile.id
+                } else {
+                    $strDisplayName = ''
+                }
+            }
+        }
+
+        Write-Verbose ('Exporting device configuration policy "' + $strDisplayName + '" to file "' + $strFileName + '".')
+        Export-JSONData -JSON $pscustomobjectDeviceConfigProfile -ExportPath $strSubfolder -FileName $strFileName
+    }
+
+    # Write output for Group Policy-based profiles
+    $strSubfolder = $strGroupPolicyBasedProfilesSubfolder
+    foreach ($strFileName in ($hashtableGroupPolicyBasedProfileFileNames.Keys)) {
+        $pscustomobjectDeviceConfigProfile = $hashtableGroupPolicyBasedProfileFileNames.Item($strFileName)
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.displayName) -eq $false) {
+            $strDisplayName = $pscustomobjectDeviceConfigProfile.displayName
+        } else {
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.name) -eq $false) {
+                $strDisplayName = $pscustomobjectDeviceConfigProfile.name
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+                    $strDisplayName = $pscustomobjectDeviceConfigProfile.id
+                } else {
+                    $strDisplayName = ''
+                }
+            }
+        }
+
+        Write-Verbose ('Exporting device configuration policy "' + $strDisplayName + '" to file "' + $strFileName + '".')
+        Export-JSONData -JSON $pscustomobjectDeviceConfigProfile -ExportPath $strSubfolder -FileName $strFileName
+    }
+
+    # Write output for template-based profiles
     $strSubfolder = $strTemplateBasedProfilesSubfolder
     foreach ($strFileName in ($hashtableTemplateBasedProfileFileNames.Keys)) {
         $pscustomobjectDeviceConfigProfile = $hashtableTemplateBasedProfileFileNames.Item($strFileName)
