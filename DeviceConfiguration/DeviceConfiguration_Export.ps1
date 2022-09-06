@@ -510,7 +510,7 @@ function Export-JSONData {
     .DESCRIPTION
     This function is used to export JSON data returned from Graph
     .EXAMPLE
-    Export-JSONData -JSON $JSON
+    Export-JSONData -JSON $JSON -ExportPath 'C:\Intune_Export' -FileName 'Intune_Export.json'
     Export the JSON inputted on the function
     .NOTES
     NAME: Export-JSONData
@@ -518,47 +518,30 @@ function Export-JSONData {
 
     param (
         $JSON,
-        $ExportPath
+        $ExportPath,
+        $FileName
     )
 
     try {
-
         if ([string]::IsNullOrEmpty($JSON)) {
             Write-Error 'No JSON specified, please specify valid JSON...'
+            return
         } elseif (!$ExportPath) {
             Write-Error 'No export path parameter set, please provide a path to export the file'
+            return
         } elseif (!(Test-Path $ExportPath)) {
             Write-Error ($ExportPath + ' does not exist, cannot export JSON Data')
+            return
+        } elseif ([string]::IsNullOrEmpty($FileName)) {
+            Write-Error 'No file name specified. Please specify a file name to export the JSON data'
+            return
         } else {
             $strJSON = ConvertTo-Json $JSON -Depth 5
 
             $pscustomobjectConvertedJSON = $strJSON | ConvertFrom-Json
 
-            if ([string]::IsNullOrEmpty($pscustomobjectConvertedJSON.displayName) -eq $false) {
-                $strDisplayName = $pscustomobjectConvertedJSON.displayName
-            } else {
-                if ([string]::IsNullOrEmpty($pscustomobjectConvertedJSON.name) -eq $false) {
-                    $strDisplayName = $pscustomobjectConvertedJSON.name
-                } else {
-                    if ([string]::IsNullOrEmpty($pscustomobjectConvertedJSON.id) -eq $false) {
-                        $strDisplayName = $pscustomobjectConvertedJSON.id
-                        Write-Verbose 'Unable to locate the name of the JSON object. Using its ID instead...'
-                    } else {
-                        $strDisplayName = 'Unknown'
-                        Write-Verbose 'Unable to locate the name or ID of the JSON object. Using "Unknown" instead...'
-                    }
-                }
-            }
-
-            # Updating display name to follow file naming conventions - https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx
-            $strDisplayName = $strDisplayName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
-
-            $strJSONExportFileName = $strDisplayName + '_' + (Get-Date -Format 'yyyy-MM-dd-HH-mm-ss') + '.json'
-
-            Write-Verbose ('Export Path: "' + $ExportPath + '"')
-
-            $strJSON | Set-Content -LiteralPath (Join-Path $ExportPath $strJSONExportFileName)
-            Write-Verbose ('JSON created in ' + (Join-Path $ExportPath $strJSONExportFileName) + '...')
+            $strJSON | Set-Content -LiteralPath (Join-Path $ExportPath $FileName)
+            Write-Verbose ('JSON created in ' + (Join-Path $ExportPath $FileName) + '...')
         }
     } catch {
         $_.Exception
@@ -919,17 +902,619 @@ if ($boolUseGraphAPIModule -eq $true) {
     #TODO: Code Graph API Module approach
 } else {
     # Graph API REST approach
+
+    $datetimeNow = Get-Date
+    $strISO8601DateTimeNow = $datetimeNow.ToUniversalTime().ToString('o')
+
+    # Get all the device configuration profiles
     $arrPSCustomObjectAndroidEnterpriseOEMConfigProfiles = @(Get-AndroidEnterpriseOEMConfigDeviceConfigurationProfile -UseGraphAPIREST)
     $arrPSCustomObjectSettingsCatalogBasedProfiles = @(Get-SettingsCatalogBasedDeviceConfigurationProfile -UseGraphAPIREST)
     $arrPSCustomObjectGroupPolicyBasedProfiles = @(Get-GroupPolicyBasedDeviceConfigurationProfile -UseGraphAPIREST)
     $arrPSCustomObjectTemplateBasedProfiles = @(Get-TemplateBasedDeviceConfigurationProfile -UseGraphAPIREST)
 
+    # Check for duplicates and warn when one is found
+    $hashtableAllDeviceConfigProfileFileNames = @{}
+    $hashtableAllDuplicateDeviceConfigProfileOriginalFileNames = @{}
+    $hashtableAndroidEnterpriseOEMConfigProfileFileNames = @{}
+    $hashtableSettingsCatalogBasedProfileFileNames = @{}
+    $hashtableGroupPolicyBasedProfileFileNames = @{}
+    $hashtableTemplateBasedProfileFileNames = @{}
+
+    foreach ($pscustomobjectDeviceConfigProfile in $arrPSCustomObjectAndroidEnterpriseOEMConfigProfiles) {
+        $refSubHashtable = [ref]$hashtableAndroidEnterpriseOEMConfigProfileFileNames
+        $intThisHashtableNumber = 1 # 1 = Android Enterprise OEMConfig profiles, $hashtableAndroidEnterpriseOEMConfigProfileFileNames
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.displayName) -eq $false) {
+            $strDisplayName = $pscustomobjectDeviceConfigProfile.displayName
+        } else {
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.name) -eq $false) {
+                $strDisplayName = $pscustomobjectDeviceConfigProfile.name
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+                    $strDisplayName = $pscustomobjectDeviceConfigProfile.id
+                } else {
+                    $strDisplayName = ([guid]::NewGuid()).Guid.ToLower()
+                }
+            }
+        }
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+            $strId = $pscustomobjectDeviceConfigProfile.id
+        } else {
+            $strId = ([guid]::NewGuid()).Guid.ToLower()
+        }
+
+        $strFileName = $strDisplayName + '_' + $strISO8601DateTimeNow
+        $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+        $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+        $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+        $strFileName = $strFileName + '.json'
+
+        if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $true) {
+            # This device configuration profile is already flagged as a duplicate
+            $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+            $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+            $strFileName = $strFileName + '.json'
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+            }
+        } elseif ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName) -eq $true) {
+            Write-Verbose ('Duplicate device config profile found named "' + $strFileName + '" Changing the planned file names to incorporate a GUID to allow duplicates to be exported.')
+            if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $false) {
+                $hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.Add($strFileName, $null)
+            }
+
+            # First, remove the existing item from the hashtable and update its file name to incorporate its GUID
+            $intDeviceConfigProfileToRenameHashtableNumber = $hashtableAllDeviceConfigProfileFileNames.Item($strFileName)
+            $hashtableAllDeviceConfigProfileFileNames.Remove($strFileName)
+            switch ($intDeviceConfigProfileToRenameHashtableNumber) {
+                1 {
+                    $refSubHashtableForRename = [ref]$hashtableAndroidEnterpriseOEMConfigProfileFileNames
+                }
+                2 {
+                    $refSubHashtableForRename = [ref]$hashtableSettingsCatalogBasedProfileFileNames
+                }
+                3 {
+                    $refSubHashtableForRename = [ref]$hashtableGroupPolicyBasedProfileFileNames
+                }
+                4 {
+                    $refSubHashtableForRename = [ref]$hashtableTemplateBasedProfileFileNames
+                }
+            }
+            $pscustomobjectDeviceConfigProfileToRename = ($refSubHashtableForRename.Value).Item($strFileName)
+            ($refSubHashtableForRename.Value).Remove($strFileName)
+
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.displayName) -eq $false) {
+                $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.displayName
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.name) -eq $false) {
+                    $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.name
+                } else {
+                    if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.id) -eq $false) {
+                        $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.id
+                    } else {
+                        $strDisplayNameForItemToRename = ([guid]::NewGuid()).Guid.ToLower()
+                    }
+                }
+            }
+
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.id) -eq $false) {
+                $strIdForItemToRename = $pscustomobjectDeviceConfigProfileToRename.id
+            } else {
+                $strIdForItemToRename = ([guid]::NewGuid()).Guid.ToLower()
+            }
+
+            $strFileNameForItemToRename = $strDisplayNameForItemToRename + '_' + $strIdForItemToRename + '_' + $strISO8601DateTimeNow
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape('.')), '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape(' ')), '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename + '.json'
+
+            if (($refSubHashtableForRename.Value).ContainsKey($strFileNameForItemToRename)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtableForRename.Value).Add($strFileNameForItemToRename, $pscustomobjectDeviceConfigProfileToRename)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileNameForItemToRename)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileNameForItemToRename, $intDeviceConfigProfileToRenameHashtableNumber)
+            }
+
+            # Now, with the existing item renamed, incorporate the GUID into the new
+            # item's file name and then add it
+            $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+            $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+            $strFileName = $strFileName + '.json'
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+            }
+        } else {
+            $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('The subordinate hashtable already contained the following file name even though the hashtable of all file names did not. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+        }
+    }
+
+    foreach ($pscustomobjectDeviceConfigProfile in $arrPSCustomObjectSettingsCatalogBasedProfiles) {
+        $refSubHashtable = [ref]$hashtableSettingsCatalogBasedProfileFileNames
+        $intThisHashtableNumber = 2 # 2 = Settings Catalog-Based Device Configuration Profiles, $hashtableSettingsCatalogBasedProfileFileNames
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.displayName) -eq $false) {
+            $strDisplayName = $pscustomobjectDeviceConfigProfile.displayName
+        } else {
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.name) -eq $false) {
+                $strDisplayName = $pscustomobjectDeviceConfigProfile.name
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+                    $strDisplayName = $pscustomobjectDeviceConfigProfile.id
+                } else {
+                    $strDisplayName = ([guid]::NewGuid()).Guid.ToLower()
+                }
+            }
+        }
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+            $strId = $pscustomobjectDeviceConfigProfile.id
+        } else {
+            $strId = ([guid]::NewGuid()).Guid.ToLower()
+        }
+
+        $strFileName = $strDisplayName + '_' + $strISO8601DateTimeNow
+        $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+        $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+        $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+        $strFileName = $strFileName + '.json'
+
+        if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $true) {
+            # This device configuration profile is already flagged as a duplicate
+            $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+            $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+            $strFileName = $strFileName + '.json'
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+            }
+        } elseif ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName) -eq $true) {
+            Write-Verbose ('Duplicate device config profile found named "' + $strFileName + '" Changing the planned file names to incorporate a GUID to allow duplicates to be exported.')
+            if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $false) {
+                $hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.Add($strFileName, $null)
+            }
+
+            # First, remove the existing item from the hashtable and update its file name to incorporate its GUID
+            $intDeviceConfigProfileToRenameHashtableNumber = $hashtableAllDeviceConfigProfileFileNames.Item($strFileName)
+            $hashtableAllDeviceConfigProfileFileNames.Remove($strFileName)
+            switch ($intDeviceConfigProfileToRenameHashtableNumber) {
+                1 {
+                    $refSubHashtableForRename = [ref]$hashtableAndroidEnterpriseOEMConfigProfileFileNames
+                }
+                2 {
+                    $refSubHashtableForRename = [ref]$hashtableSettingsCatalogBasedProfileFileNames
+                }
+                3 {
+                    $refSubHashtableForRename = [ref]$hashtableGroupPolicyBasedProfileFileNames
+                }
+                4 {
+                    $refSubHashtableForRename = [ref]$hashtableTemplateBasedProfileFileNames
+                }
+            }
+            $pscustomobjectDeviceConfigProfileToRename = ($refSubHashtableForRename.Value).Item($strFileName)
+            ($refSubHashtableForRename.Value).Remove($strFileName)
+
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.displayName) -eq $false) {
+                $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.displayName
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.name) -eq $false) {
+                    $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.name
+                } else {
+                    if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.id) -eq $false) {
+                        $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.id
+                    } else {
+                        $strDisplayNameForItemToRename = ([guid]::NewGuid()).Guid.ToLower()
+                    }
+                }
+            }
+
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.id) -eq $false) {
+                $strIdForItemToRename = $pscustomobjectDeviceConfigProfileToRename.id
+            } else {
+                $strIdForItemToRename = ([guid]::NewGuid()).Guid.ToLower()
+            }
+
+            $strFileNameForItemToRename = $strDisplayNameForItemToRename + '_' + $strIdForItemToRename + '_' + $strISO8601DateTimeNow
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape('.')), '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape(' ')), '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename + '.json'
+
+            if (($refSubHashtableForRename.Value).ContainsKey($strFileNameForItemToRename)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtableForRename.Value).Add($strFileNameForItemToRename, $pscustomobjectDeviceConfigProfileToRename)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileNameForItemToRename)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileNameForItemToRename, $intDeviceConfigProfileToRenameHashtableNumber)
+            }
+
+            # Now, with the existing item renamed, incorporate the GUID into the new
+            # item's file name and then add it
+            $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+            $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+            $strFileName = $strFileName + '.json'
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+            }
+        } else {
+            $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('The subordinate hashtable already contained the following file name even though the hashtable of all file names did not. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+        }
+    }
+
+    foreach ($pscustomobjectDeviceConfigProfile in $arrPSCustomObjectGroupPolicyBasedProfiles) {
+        $refSubHashtable = [ref]$hashtableGroupPolicyBasedProfileFileNames
+        $intThisHashtableNumber = 3 # 3 = Group Policy-Based Device Configuration Profiles, $hashtableGroupPolicyBasedProfileFileNames
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.displayName) -eq $false) {
+            $strDisplayName = $pscustomobjectDeviceConfigProfile.displayName
+        } else {
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.name) -eq $false) {
+                $strDisplayName = $pscustomobjectDeviceConfigProfile.name
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+                    $strDisplayName = $pscustomobjectDeviceConfigProfile.id
+                } else {
+                    $strDisplayName = ([guid]::NewGuid()).Guid.ToLower()
+                }
+            }
+        }
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+            $strId = $pscustomobjectDeviceConfigProfile.id
+        } else {
+            $strId = ([guid]::NewGuid()).Guid.ToLower()
+        }
+
+        $strFileName = $strDisplayName + '_' + $strISO8601DateTimeNow
+        $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+        $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+        $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+        $strFileName = $strFileName + '.json'
+
+        if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $true) {
+            # This device configuration profile is already flagged as a duplicate
+            $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+            $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+            $strFileName = $strFileName + '.json'
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+            }
+        } elseif ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName) -eq $true) {
+            Write-Verbose ('Duplicate device config profile found named "' + $strFileName + '" Changing the planned file names to incorporate a GUID to allow duplicates to be exported.')
+            if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $false) {
+                $hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.Add($strFileName, $null)
+            }
+
+            # First, remove the existing item from the hashtable and update its file name to incorporate its GUID
+            $intDeviceConfigProfileToRenameHashtableNumber = $hashtableAllDeviceConfigProfileFileNames.Item($strFileName)
+            $hashtableAllDeviceConfigProfileFileNames.Remove($strFileName)
+            switch ($intDeviceConfigProfileToRenameHashtableNumber) {
+                1 {
+                    $refSubHashtableForRename = [ref]$hashtableAndroidEnterpriseOEMConfigProfileFileNames
+                }
+                2 {
+                    $refSubHashtableForRename = [ref]$hashtableSettingsCatalogBasedProfileFileNames
+                }
+                3 {
+                    $refSubHashtableForRename = [ref]$hashtableGroupPolicyBasedProfileFileNames
+                }
+                4 {
+                    $refSubHashtableForRename = [ref]$hashtableTemplateBasedProfileFileNames
+                }
+            }
+            $pscustomobjectDeviceConfigProfileToRename = ($refSubHashtableForRename.Value).Item($strFileName)
+            ($refSubHashtableForRename.Value).Remove($strFileName)
+
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.displayName) -eq $false) {
+                $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.displayName
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.name) -eq $false) {
+                    $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.name
+                } else {
+                    if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.id) -eq $false) {
+                        $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.id
+                    } else {
+                        $strDisplayNameForItemToRename = ([guid]::NewGuid()).Guid.ToLower()
+                    }
+                }
+            }
+
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.id) -eq $false) {
+                $strIdForItemToRename = $pscustomobjectDeviceConfigProfileToRename.id
+            } else {
+                $strIdForItemToRename = ([guid]::NewGuid()).Guid.ToLower()
+            }
+
+            $strFileNameForItemToRename = $strDisplayNameForItemToRename + '_' + $strIdForItemToRename + '_' + $strISO8601DateTimeNow
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape('.')), '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape(' ')), '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename + '.json'
+
+            if (($refSubHashtableForRename.Value).ContainsKey($strFileNameForItemToRename)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtableForRename.Value).Add($strFileNameForItemToRename, $pscustomobjectDeviceConfigProfileToRename)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileNameForItemToRename)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileNameForItemToRename, $intDeviceConfigProfileToRenameHashtableNumber)
+            }
+
+            # Now, with the existing item renamed, incorporate the GUID into the new
+            # item's file name and then add it
+            $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+            $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+            $strFileName = $strFileName + '.json'
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+            }
+        } else {
+            $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('The subordinate hashtable already contained the following file name even though the hashtable of all file names did not. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+        }
+    }
+
+    foreach ($pscustomobjectDeviceConfigProfile in $arrPSCustomObjectTemplateBasedProfiles) {
+        $refSubHashtable = [ref]$hashtableTemplateBasedProfileFileNames
+        $intThisHashtableNumber = 4 # 4 = Template-Based Device Configuration Profiles, $hashtableTemplateBasedProfileFileNames
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.displayName) -eq $false) {
+            $strDisplayName = $pscustomobjectDeviceConfigProfile.displayName
+        } else {
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.name) -eq $false) {
+                $strDisplayName = $pscustomobjectDeviceConfigProfile.name
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+                    $strDisplayName = $pscustomobjectDeviceConfigProfile.id
+                } else {
+                    $strDisplayName = ([guid]::NewGuid()).Guid.ToLower()
+                }
+            }
+        }
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+            $strId = $pscustomobjectDeviceConfigProfile.id
+        } else {
+            $strId = ([guid]::NewGuid()).Guid.ToLower()
+        }
+
+        $strFileName = $strDisplayName + '_' + $strISO8601DateTimeNow
+        $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+        $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+        $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+        $strFileName = $strFileName + '.json'
+
+        if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $true) {
+            # This device configuration profile is already flagged as a duplicate
+            $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+            $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+            $strFileName = $strFileName + '.json'
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+            }
+        } elseif ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName) -eq $true) {
+            Write-Verbose ('Duplicate device config profile found named "' + $strFileName + '" Changing the planned file names to incorporate a GUID to allow duplicates to be exported.')
+            if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $false) {
+                $hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.Add($strFileName, $null)
+            }
+
+            # First, remove the existing item from the hashtable and update its file name to incorporate its GUID
+            $intDeviceConfigProfileToRenameHashtableNumber = $hashtableAllDeviceConfigProfileFileNames.Item($strFileName)
+            $hashtableAllDeviceConfigProfileFileNames.Remove($strFileName)
+            switch ($intDeviceConfigProfileToRenameHashtableNumber) {
+                1 {
+                    $refSubHashtableForRename = [ref]$hashtableAndroidEnterpriseOEMConfigProfileFileNames
+                }
+                2 {
+                    $refSubHashtableForRename = [ref]$hashtableSettingsCatalogBasedProfileFileNames
+                }
+                3 {
+                    $refSubHashtableForRename = [ref]$hashtableGroupPolicyBasedProfileFileNames
+                }
+                4 {
+                    $refSubHashtableForRename = [ref]$hashtableTemplateBasedProfileFileNames
+                }
+            }
+            $pscustomobjectDeviceConfigProfileToRename = ($refSubHashtableForRename.Value).Item($strFileName)
+            ($refSubHashtableForRename.Value).Remove($strFileName)
+
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.displayName) -eq $false) {
+                $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.displayName
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.name) -eq $false) {
+                    $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.name
+                } else {
+                    if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.id) -eq $false) {
+                        $strDisplayNameForItemToRename = $pscustomobjectDeviceConfigProfileToRename.id
+                    } else {
+                        $strDisplayNameForItemToRename = ([guid]::NewGuid()).Guid.ToLower()
+                    }
+                }
+            }
+
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfileToRename.id) -eq $false) {
+                $strIdForItemToRename = $pscustomobjectDeviceConfigProfileToRename.id
+            } else {
+                $strIdForItemToRename = ([guid]::NewGuid()).Guid.ToLower()
+            }
+
+            $strFileNameForItemToRename = $strDisplayNameForItemToRename + '_' + $strIdForItemToRename + '_' + $strISO8601DateTimeNow
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape('.')), '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape(' ')), '_'
+            $strFileNameForItemToRename = $strFileNameForItemToRename + '.json'
+
+            if (($refSubHashtableForRename.Value).ContainsKey($strFileNameForItemToRename)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtableForRename.Value).Add($strFileNameForItemToRename, $pscustomobjectDeviceConfigProfileToRename)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileNameForItemToRename)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileNameForItemToRename, $intDeviceConfigProfileToRenameHashtableNumber)
+            }
+
+            # Now, with the existing item renamed, incorporate the GUID into the new
+            # item's file name and then add it
+            $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
+            $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
+            $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
+            $strFileName = $strFileName + '.json'
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+
+            if ($hashtableAllDeviceConfigProfileFileNames.ContainsKey($strFileName)) {
+                Write-Warning ('Despite incorporating a GUID into the file name, a duplicate file name was still detected. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+            }
+        } else {
+            $hashtableAllDeviceConfigProfileFileNames.Add($strFileName, $intThisHashtableNumber)
+
+            if (($refSubHashtable.Value).ContainsKey($strFileName)) {
+                Write-Warning ('The subordinate hashtable already contained the following file name even though the hashtable of all file names did not. This should never happen. Skipping processing on file "' + $strFileName + '".')
+            } else {
+                ($refSubHashtable.Value).Add($strFileName, $pscustomobjectDeviceConfigProfile)
+            }
+        }
+    }
+
     #TODO: export $arrPSCustomObjectAndroidEnterpriseOEMConfigProfiles
     #TODO: export $arrPSCustomObjectSettingsCatalogBasedProfiles
     #TODO: export $arrPSCustomObjectGroupPolicyBasedProfiles
-    foreach ($pscustomobjectDeviceConfigurationPolicy in $arrPSCustomObjectTemplateBasedProfiles) {
-        Write-Verbose ('Device Configuration Policy: ' + $pscustomobjectDeviceConfigurationPolicy.displayName)
-        Export-JSONData -JSON $pscustomobjectDeviceConfigurationPolicy -ExportPath $strTemplateBasedProfilesSubfolder
+    $strSubfolder = $strTemplateBasedProfilesSubfolder
+    foreach ($strFileName in ($hashtableTemplateBasedProfileFileNames.Keys)) {
+        $pscustomobjectDeviceConfigProfile = $hashtableTemplateBasedProfileFileNames.Item($strFileName)
+
+        if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.displayName) -eq $false) {
+            $strDisplayName = $pscustomobjectDeviceConfigProfile.displayName
+        } else {
+            if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.name) -eq $false) {
+                $strDisplayName = $pscustomobjectDeviceConfigProfile.name
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectDeviceConfigProfile.id) -eq $false) {
+                    $strDisplayName = $pscustomobjectDeviceConfigProfile.id
+                } else {
+                    $strDisplayName = ''
+                }
+            }
+        }
+
+        Write-Verbose ('Exporting device configuration policy "' + $strDisplayName + '" to file "' + $strFileName + '".')
+        Export-JSONData -JSON $pscustomobjectDeviceConfigProfile -ExportPath $strSubfolder -FileName $strFileName
     }
 }
 
