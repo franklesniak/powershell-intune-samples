@@ -534,7 +534,21 @@ function Export-JSONData {
 
             $pscustomobjectConvertedJSON = $strJSON | ConvertFrom-Json
 
-            $strDisplayName = $pscustomobjectConvertedJSON.displayName
+            if ([string]::IsNullOrEmpty($pscustomobjectConvertedJSON.displayName) -eq $false) {
+                $strDisplayName = $pscustomobjectConvertedJSON.displayName
+            } else {
+                if ([string]::IsNullOrEmpty($pscustomobjectConvertedJSON.name) -eq $false) {
+                    $strDisplayName = $pscustomobjectConvertedJSON.name
+                } else {
+                    if ([string]::IsNullOrEmpty($pscustomobjectConvertedJSON.id) -eq $false) {
+                        $strDisplayName = $pscustomobjectConvertedJSON.id
+                        Write-Verbose 'Unable to locate the name of the JSON object. Using its ID instead...'
+                    } else {
+                        $strDisplayName = 'Unknown'
+                        Write-Verbose 'Unable to locate the name or ID of the JSON object. Using "Unknown" instead...'
+                    }
+                }
+            }
 
             # Updating display name to follow file naming conventions - https://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx
             $strDisplayName = $strDisplayName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
