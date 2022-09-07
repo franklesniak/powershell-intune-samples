@@ -307,17 +307,21 @@ function Get-SettingsCatalogBasedDeviceConfigurationProfile {
 function Get-GroupPolicyBasedDeviceConfigurationProfile {
     <#
     .SYNOPSIS
-    This function is used to get Group Policy-based configuration profiles from the Graph API REST interface.
+    This function is used to get Group Policy-based configuration profiles from the
+    Graph API REST interface.
     .DESCRIPTION
-    The function connects to the Graph API interface and gets any Group Policy-baseddevice configuration profiles.
-    A non-exhaustive list of the device configuration profiles retrieved by this function are:
+    The function connects to the Graph API interface and gets any Group Policy-based
+    device configuration profiles.
+    A non-exhaustive list of the device configuration profiles retrieved by this
+    function are:
     Win10+ - Templates - Administrative Templates
     Win10+ - Templates - Imported Administrative Templates
     .EXAMPLE
     Get-TemplateBasedDeviceConfigurationProfile
     Returns any device configuration profiles configured in Intune
     .NOTES
-    This function does not retrieve the following device configuration profiles (note: list is non-exhaustive):
+    This function does not retrieve the following device configuration profiles (note:
+    list is non-exhaustive):
     macOS - Settings Catalog
     macOS - Templates - Custom
     macOS - Templates - Device Features
