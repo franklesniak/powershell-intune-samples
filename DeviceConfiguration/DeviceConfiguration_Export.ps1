@@ -967,6 +967,7 @@ if ($boolUseGraphAPIModule -eq $true) {
         }
 
         $strFileName = $strDisplayName + '_' + $strISO8601DateTimeNow
+        #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
         $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
         $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
         $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -975,6 +976,7 @@ if ($boolUseGraphAPIModule -eq $true) {
         if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $true) {
             # This device configuration profile is already flagged as a duplicate
             $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
             $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1038,6 +1040,7 @@ if ($boolUseGraphAPIModule -eq $true) {
             }
 
             $strFileNameForItemToRename = $strDisplayNameForItemToRename + '_' + $strIdForItemToRename + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape('.')), '_'
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape(' ')), '_'
@@ -1058,6 +1061,7 @@ if ($boolUseGraphAPIModule -eq $true) {
             # Now, with the existing item renamed, incorporate the GUID into the new
             # item's file name and then add it
             $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
             $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1110,6 +1114,7 @@ if ($boolUseGraphAPIModule -eq $true) {
         }
 
         $strFileName = $strDisplayName + '_' + $strISO8601DateTimeNow
+        #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
         $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
         $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
         $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1118,6 +1123,7 @@ if ($boolUseGraphAPIModule -eq $true) {
         if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $true) {
             # This device configuration profile is already flagged as a duplicate
             $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
             $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1181,6 +1187,7 @@ if ($boolUseGraphAPIModule -eq $true) {
             }
 
             $strFileNameForItemToRename = $strDisplayNameForItemToRename + '_' + $strIdForItemToRename + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape('.')), '_'
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape(' ')), '_'
@@ -1201,6 +1208,7 @@ if ($boolUseGraphAPIModule -eq $true) {
             # Now, with the existing item renamed, incorporate the GUID into the new
             # item's file name and then add it
             $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
             $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1253,6 +1261,7 @@ if ($boolUseGraphAPIModule -eq $true) {
         }
 
         $strFileName = $strDisplayName + '_' + $strISO8601DateTimeNow
+        #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
         $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
         $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
         $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1261,6 +1270,7 @@ if ($boolUseGraphAPIModule -eq $true) {
         if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $true) {
             # This device configuration profile is already flagged as a duplicate
             $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
             $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1324,6 +1334,7 @@ if ($boolUseGraphAPIModule -eq $true) {
             }
 
             $strFileNameForItemToRename = $strDisplayNameForItemToRename + '_' + $strIdForItemToRename + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape('.')), '_'
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape(' ')), '_'
@@ -1344,6 +1355,7 @@ if ($boolUseGraphAPIModule -eq $true) {
             # Now, with the existing item renamed, incorporate the GUID into the new
             # item's file name and then add it
             $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
             $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1396,6 +1408,7 @@ if ($boolUseGraphAPIModule -eq $true) {
         }
 
         $strFileName = $strDisplayName + '_' + $strISO8601DateTimeNow
+        #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
         $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
         $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
         $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1404,6 +1417,7 @@ if ($boolUseGraphAPIModule -eq $true) {
         if ($hashtableAllDuplicateDeviceConfigProfileOriginalFileNames.ContainsKey($strFileName) -eq $true) {
             # This device configuration profile is already flagged as a duplicate
             $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
             $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
@@ -1467,6 +1481,7 @@ if ($boolUseGraphAPIModule -eq $true) {
             }
 
             $strFileNameForItemToRename = $strDisplayNameForItemToRename + '_' + $strIdForItemToRename + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape('.')), '_'
             $strFileNameForItemToRename = $strFileNameForItemToRename -replace ([regex]::Escape(' ')), '_'
@@ -1487,6 +1502,7 @@ if ($boolUseGraphAPIModule -eq $true) {
             # Now, with the existing item renamed, incorporate the GUID into the new
             # item's file name and then add it
             $strFileName = $strDisplayName + '_' + $strId + '_' + $strISO8601DateTimeNow
+            #TODO: [IO.Path]::GetInvalidFileNameChars() and [IO.Path]::GetInvalidPathChars() to remove invalid characters from the file name
             $strFileName = $strFileName -replace '\<|\>|:|"|/|\\|\||\?|\*', '_'
             $strFileName = $strFileName -replace ([regex]::Escape('.')), '_'
             $strFileName = $strFileName -replace ([regex]::Escape(' ')), '_'
