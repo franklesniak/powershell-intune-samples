@@ -331,7 +331,7 @@ function Get-SettingsCatalogBasedDeviceConfigurationProfile {
         foreach ($pscustomobjectSettingsCatalogBasedProfile in $arrPSCustomObjectSettingsCatalogBasedProfiles) {
             $strDeviceConfigurationProfileID = $pscustomobjectSettingsCatalogBasedProfile.id
 
-            $arrPSCustomObjectSettings = @(Get-SettingsCatalogBasedDeviceConfigurationProfileSettings -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST)
+            $arrPSCustomObjectSettings = @(Get-SettingsCatalogBasedDeviceConfigurationProfileSetting -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST)
             $hashtableSettings = @{}
             foreach ($pscustomobjectSetting in $arrPSCustomObjectSettings) {
                 $strSettingID = $pscustomobjectSetting.id
@@ -344,7 +344,7 @@ function Get-SettingsCatalogBasedDeviceConfigurationProfile {
     }
 }
 
-function Get-SettingsCatalogBasedDeviceConfigurationProfileSettings {
+function Get-SettingsCatalogBasedDeviceConfigurationProfileSetting {
     <#
     .SYNOPSIS
     This function is used to get the settings in a settings catalog-based device
@@ -353,7 +353,7 @@ function Get-SettingsCatalogBasedDeviceConfigurationProfileSettings {
     The function connects to the Graph API interface and gets any settings for a
     settings catalog-based device configuration profiles.
     .EXAMPLE
-    Get-SettingsCatalogBasedDeviceConfigurationProfileSettings -DeviceConfigurationProfileID 'b0c0b0c0-b0c0-b0c0-b0c0-b0c0b0c0b0c0'
+    Get-SettingsCatalogBasedDeviceConfigurationProfileSetting -DeviceConfigurationProfileID 'b0c0b0c0-b0c0-b0c0-b0c0-b0c0b0c0b0c0'
 
     This example gets the settings for the device configuration profile with the ID
     'b0c0b0c0-b0c0-b0c0-b0c0-b0c0b0c0b0c0'.
@@ -515,7 +515,7 @@ function Get-GroupPolicyBasedDeviceConfigurationProfile {
         foreach ($pscustomobjectGroupPolicyBasedProfile in $arrPSCustomObjectGroupPolicyBasedProfiles) {
             $strDeviceConfigurationProfileID = $pscustomobjectGroupPolicyBasedProfile.id
 
-            $arrDefinitionValues = @(Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValues -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST)
+            $arrDefinitionValues = @(Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValue -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST)
             $hashtableDefinitionValues = @{}
             foreach ($pscustomobjectDefinitionValue in $arrDefinitionValues) {
                 $strGroupPolicyDefinitionValueID = $pscustomobjectDefinitionValue.id
@@ -528,7 +528,7 @@ function Get-GroupPolicyBasedDeviceConfigurationProfile {
                 }
                 $pscustomobjectDefinitionValue | Add-Member -MemberType NoteProperty -Name 'definitionValueDefinitions' -Value $hashtableDefinitionValueDefinitions
 
-                # $arrDefinitionValuePresentationValues = @(Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValues -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -GroupPolicyDefinitionValueID $strGroupPolicyDefinitionValueID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST)
+                # $arrDefinitionValuePresentationValues = @(Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValue -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -GroupPolicyDefinitionValueID $strGroupPolicyDefinitionValueID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST)
                 # $hashtableDefinitionValuePresentationValues = @{}
                 # foreach ($pscustomobjectDefinitionValuePresentationValue in $arrDefinitionValuePresentationValues) {
                 #     $strDefinitionValuePresentationValueID = $pscustomobjectDefinitionValuePresentationValue.id
@@ -536,7 +536,7 @@ function Get-GroupPolicyBasedDeviceConfigurationProfile {
                 # }
                 # $pscustomobjectDefinitionValue | Add-Member -MemberType NoteProperty -Name 'definitionValuePresentationValues' -Value $hashtableDefinitionValuePresentationValues
 
-                $arrDefinitionValueExpandedPresentationValues = @(Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueExpandedPresentationValues -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -GroupPolicyDefinitionValueID $strGroupPolicyDefinitionValueID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST)
+                $arrDefinitionValueExpandedPresentationValues = @(Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueExpandedPresentationValue -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -GroupPolicyDefinitionValueID $strGroupPolicyDefinitionValueID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST)
                 $hashtableDefinitionValueExpandedPresentationValues = @{}
                 foreach ($pscustomobjectDefinitionValueExpandedPresentationValue in $arrDefinitionValueExpandedPresentationValues) {
                     $strDefinitionValueExpandedPresentationValueID = $pscustomobjectDefinitionValueExpandedPresentationValue.id
@@ -553,7 +553,7 @@ function Get-GroupPolicyBasedDeviceConfigurationProfile {
     }
 }
 
-function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValues {
+function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValue {
     <#
     .SYNOPSIS
     This function is used to get the definition values for a Group Policy-based device
@@ -563,7 +563,7 @@ function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValues {
     device configuration profile definition values associated with a given Group
     Policy-based device configuration profile.
     .EXAMPLE
-    Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValues -DeviceConfigurationProfileID 'f0b5c0c0-0c0c-0c0c-0c0c-0c0c0c0c0c0c'
+    Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValue -DeviceConfigurationProfileID 'f0b5c0c0-0c0c-0c0c-0c0c-0c0c0c0c0c0c'
     Returns the definition values for the Group Policy-based device configuration
     profile with the ID 'f0b5c0c0-0c0c-0c0c-0c0c-0c0c0c0c0c0c'
     .NOTES
@@ -703,7 +703,8 @@ function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueDefinition
     }
 }
 
-# function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValues {
+#TODO: remove this function
+# function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValue {
 #     <#
 #     .SYNOPSIS
 #     This function is used to get the definition value presentation values for a Group
@@ -714,7 +715,7 @@ function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueDefinition
 #     device configuration profile definition value presentation values associated with a
 #     given Group Policy-based device configuration profile and definition value.
 #     .EXAMPLE
-#     Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValues -DeviceConfigurationProfileID '12345678-1234-1234-1234-123456789012' -GroupPolicyDefinitionValueID '12345678-1234-1234-1234-123456789012'
+#     Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValue -DeviceConfigurationProfileID '12345678-1234-1234-1234-123456789012' -GroupPolicyDefinitionValueID '12345678-1234-1234-1234-123456789012'
 #     Returns the definition value presentation values for the Group Policy-based device
 #     configuration profile with ID 12345678-1234-1234-1234-123456789012 and definition
 #     value with ID 12345678-1234-1234-1234-123456789012
@@ -783,7 +784,7 @@ function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueDefinition
 #     }
 # }
 
-function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueExpandedPresentationValues {
+function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueExpandedPresentationValue {
     <#
     .SYNOPSIS
     This function is used to get the definition value expanded presentation values for
@@ -795,7 +796,7 @@ function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueExpandedPr
     associated with a given Group Policy-based device configuration profile and
     definition value.
     .EXAMPLE
-    Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueExpandedPresentationValues -DeviceConfigurationProfileID '12345678-1234-1234-1234-123456789012' -GroupPolicyDefinitionValueID '12345678-1234-1234-1234-123456789012'
+    Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueExpandedPresentationValue -DeviceConfigurationProfileID '12345678-1234-1234-1234-123456789012' -GroupPolicyDefinitionValueID '12345678-1234-1234-1234-123456789012'
     Returns the definition value expanded presentation values for the Group Policy-
     based device configuration profile with ID 12345678-1234-1234-1234-123456789012
     and definition value with ID 12345678-1234-1234-1234-123456789012
