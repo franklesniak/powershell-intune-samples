@@ -1003,7 +1003,7 @@ function Export-JSONData {
             Write-Error 'No file name specified. Please specify a file name to export the JSON data'
             return
         } else {
-            $strJSON = ConvertTo-Json $JSON -Depth 5
+            $strJSON = ConvertTo-Json $JSON -Depth 8
 
             $pscustomobjectConvertedJSON = $strJSON | ConvertFrom-Json
 

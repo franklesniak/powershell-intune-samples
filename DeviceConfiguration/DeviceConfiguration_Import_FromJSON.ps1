@@ -525,7 +525,7 @@ if ($boolUseGraphAPIModule -eq $true) {
 
     $strDisplayName = $pscustomobjectConvertedJSON.displayName
 
-    $strJSONOutput = $pscustomobjectConvertedJSON | ConvertTo-Json -Depth 5
+    $strJSONOutput = $pscustomobjectConvertedJSON | ConvertTo-Json -Depth 8
 
     Write-Verbose ('Device Configuration Policy "' + $strDisplayName + '" Found...')
     Write-Debug $strJSONOutput
