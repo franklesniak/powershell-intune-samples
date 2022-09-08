@@ -310,6 +310,83 @@ function Get-SettingsCatalogBasedDeviceConfigurationProfile {
         try {
             $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource + '?' + $strGraphAPIQueryString
             $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
+            $arrPSCustomObjectSettingsCatalogBasedProfiles = @((Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value)
+            $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
+        } catch {
+            $ex = $_.Exception
+            $errorResponse = $ex.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($errorResponse)
+            $reader.BaseStream.Position = 0
+            $reader.DiscardBufferedData()
+            $responseBody = $reader.ReadToEnd();
+            if ($versionPowerShell -ge [version]'5.0') {
+                Write-Information ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+            } else {
+                Write-Verbose ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+            }
+            return
+        }
+
+        $arraylistPSCustomObjectSettingsCatalogBasedProfilesForOutput = New-Object System.Collections.ArrayList
+        foreach ($pscustomobjectSettingsCatalogBasedProfile in $arrPSCustomObjectSettingsCatalogBasedProfiles) {
+            $strDeviceConfigurationProfileID = $pscustomobjectSettingsCatalogBasedProfile.id
+
+            $arrPSCustomObjectSettings = @(Get-SettingsCatalogBasedDeviceConfigurationProfileSettings -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST)
+            $hashtableSettings = @{}
+            foreach ($pscustomobjectSetting in $arrPSCustomObjectSettings) {
+                $strSettingID = $pscustomobjectSetting.id
+                $hashtableSettings.Add($strSettingID, $pscustomobjectSetting)
+            }
+            $pscustomobjectSettingsCatalogBasedProfile | Add-Member -MemberType NoteProperty -Name 'settings' -Value $hashtableSettings
+            [void]($arraylistPSCustomObjectSettingsCatalogBasedProfilesForOutput.Add($pscustomobjectSettingsCatalogBasedProfile))
+        }
+        return $arraylistPSCustomObjectSettingsCatalogBasedProfilesForOutput.ToArray()
+    }
+}
+
+function Get-SettingsCatalogBasedDeviceConfigurationProfileSettings {
+    <#
+    .SYNOPSIS
+    This function is used to get the settings in a settings catalog-based device
+    configuration profiles from the Graph API REST interface.
+    .DESCRIPTION
+    The function connects to the Graph API interface and gets any settings for a
+    settings catalog-based device configuration profiles.
+    .EXAMPLE
+    Get-SettingsCatalogBasedDeviceConfigurationProfileSettings -DeviceConfigurationProfileID 'b0c0b0c0-b0c0-b0c0-b0c0-b0c0b0c0b0c0'
+
+    This example gets the settings for the device configuration profile with the ID
+    'b0c0b0c0-b0c0-b0c0-b0c0-b0c0b0c0b0c0'.
+    .NOTES
+    Not intended for end users
+    #>
+
+    [cmdletbinding()]
+    param (
+        [Parameter(Mandatory = $false)][Switch]$UseGraphAPIModule,
+        [Parameter(Mandatory = $false)][Switch]$UseGraphAPIREST,
+        [Parameter(Mandatory = $false)][string]$DeviceConfigurationProfileID
+    )
+
+    if (($UseGraphAPIModule.IsPresent) -or ($UseGraphAPIREST.IsPresent -eq $false)) {
+        # Either the user specified to use the Graph API Module or the user did not specify
+        # to use the Graph API REST interface
+        $boolUseGraphAPIModule = $true
+    } else {
+        $boolUseGraphAPIModule = $false
+    }
+
+    if ($boolUseGraphAPIModule) {
+        #TODO: Using the Graph API Module approach
+        # Get-MgDeviceManagementConfigurationPolicySetting -DeviceManagementConfigurationPolicyId $DeviceConfigurationProfileID -ExpandProperty "settingDefinitions"
+    } else {
+        # Using the Graph API REST approach
+        $strGraphAPIVersion = 'beta'
+        $strDCPResource = 'deviceManagement/configurationPolicies/' + $DeviceConfigurationProfileID + '/settings?$expand=settingDefinitions'
+
+        try {
+            $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
+            $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
             return (Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value
             $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
         } catch {
@@ -626,85 +703,85 @@ function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueDefinition
     }
 }
 
-function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValues {
-    <#
-    .SYNOPSIS
-    This function is used to get the definition value presentation values for a Group
-    Policy-based device configuration profile's definition value using the Graph API
-    REST interface.
-    .DESCRIPTION
-    The function connects to the Graph API interface and gets the Group Policy-based
-    device configuration profile definition value presentation values associated with a
-    given Group Policy-based device configuration profile and definition value.
-    .EXAMPLE
-    Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValues -DeviceConfigurationProfileID '12345678-1234-1234-1234-123456789012' -GroupPolicyDefinitionValueID '12345678-1234-1234-1234-123456789012'
-    Returns the definition value presentation values for the Group Policy-based device
-    configuration profile with ID 12345678-1234-1234-1234-123456789012 and definition
-    value with ID 12345678-1234-1234-1234-123456789012
-    .NOTES
-    Not meant to be called by end users
-    #>
+# function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValues {
+#     <#
+#     .SYNOPSIS
+#     This function is used to get the definition value presentation values for a Group
+#     Policy-based device configuration profile's definition value using the Graph API
+#     REST interface.
+#     .DESCRIPTION
+#     The function connects to the Graph API interface and gets the Group Policy-based
+#     device configuration profile definition value presentation values associated with a
+#     given Group Policy-based device configuration profile and definition value.
+#     .EXAMPLE
+#     Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValuePresentationValues -DeviceConfigurationProfileID '12345678-1234-1234-1234-123456789012' -GroupPolicyDefinitionValueID '12345678-1234-1234-1234-123456789012'
+#     Returns the definition value presentation values for the Group Policy-based device
+#     configuration profile with ID 12345678-1234-1234-1234-123456789012 and definition
+#     value with ID 12345678-1234-1234-1234-123456789012
+#     .NOTES
+#     Not meant to be called by end users
+#     #>
 
-    [cmdletbinding()]
-    param (
-        [Parameter(Mandatory = $false)][Switch]$UseGraphAPIModule,
-        [Parameter(Mandatory = $false)][Switch]$UseGraphAPIREST,
-        [Parameter(Mandatory = $true)][string]$DeviceConfigurationProfileID,
-        [Parameter(Mandatory = $true)][string]$GroupPolicyDefinitionValueID
-    )
+#     [cmdletbinding()]
+#     param (
+#         [Parameter(Mandatory = $false)][Switch]$UseGraphAPIModule,
+#         [Parameter(Mandatory = $false)][Switch]$UseGraphAPIREST,
+#         [Parameter(Mandatory = $true)][string]$DeviceConfigurationProfileID,
+#         [Parameter(Mandatory = $true)][string]$GroupPolicyDefinitionValueID
+#     )
 
-    if (($UseGraphAPIModule.IsPresent) -or ($UseGraphAPIREST.IsPresent -eq $false)) {
-        # Either the user specified to use the Graph API Module or the user did not specify
-        # to use the Graph API REST interface
-        $boolUseGraphAPIModule = $true
-    } else {
-        $boolUseGraphAPIModule = $false
-    }
+#     if (($UseGraphAPIModule.IsPresent) -or ($UseGraphAPIREST.IsPresent -eq $false)) {
+#         # Either the user specified to use the Graph API Module or the user did not specify
+#         # to use the Graph API REST interface
+#         $boolUseGraphAPIModule = $true
+#     } else {
+#         $boolUseGraphAPIModule = $false
+#     }
 
-    if ($boolUseGraphAPIModule) {
-        #TODO: Using the Graph API Module approach
-        # Get-MgDeviceManagementGroupPolicyConfigurationDefinitionValuePresentationValue
-    } else {
-        # Using the Graph API REST approach
-        $strGraphAPIVersion = 'beta'
+#     if ($boolUseGraphAPIModule) {
+#         #TODO: Using the Graph API Module approach
+#         # Get-MgDeviceManagementGroupPolicyConfigurationDefinitionValuePresentationValue
+#     } else {
+#         # Using the Graph API REST approach
+#         $strGraphAPIVersion = 'beta'
 
-        if ([string]::IsNullOrEmpty($DeviceConfigurationProfileID)) {
-            Write-Warning 'The Group Policy-based device configuration profile ID is empty. No definition values will be returned.'
-            return
-        } elseif ((Test-StringIsGUID -GUID $DeviceConfigurationProfileID) -eq $false) {
-            Write-Warning 'The Group Policy-based device configuration profile ID is not a valid GUID. No definition values will be returned.'
-            return
-        }
-        if ([string]::IsNullOrEmpty($GroupPolicyDefinitionValueID)) {
-            Write-Warning 'The Group Policy-based device configuration profile ID is empty. No definition values will be returned.'
-            return
-        } elseif ((Test-StringIsGUID -GUID $GroupPolicyDefinitionValueID) -eq $false) {
-            Write-Warning 'The Group Policy-based device configuration profile ID is not a valid GUID. No definition values will be returned.'
-            return
-        }
-        $strDCPResource = 'deviceManagement/groupPolicyConfigurations/' + $DeviceConfigurationProfileID + '/definitionValues/' + $GroupPolicyDefinitionValueID + '/presentationValues'
+#         if ([string]::IsNullOrEmpty($DeviceConfigurationProfileID)) {
+#             Write-Warning 'The Group Policy-based device configuration profile ID is empty. No definition values will be returned.'
+#             return
+#         } elseif ((Test-StringIsGUID -GUID $DeviceConfigurationProfileID) -eq $false) {
+#             Write-Warning 'The Group Policy-based device configuration profile ID is not a valid GUID. No definition values will be returned.'
+#             return
+#         }
+#         if ([string]::IsNullOrEmpty($GroupPolicyDefinitionValueID)) {
+#             Write-Warning 'The Group Policy-based device configuration profile ID is empty. No definition values will be returned.'
+#             return
+#         } elseif ((Test-StringIsGUID -GUID $GroupPolicyDefinitionValueID) -eq $false) {
+#             Write-Warning 'The Group Policy-based device configuration profile ID is not a valid GUID. No definition values will be returned.'
+#             return
+#         }
+#         $strDCPResource = 'deviceManagement/groupPolicyConfigurations/' + $DeviceConfigurationProfileID + '/definitionValues/' + $GroupPolicyDefinitionValueID + '/presentationValues'
 
-        try {
-            $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
-            $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
-            return (Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value
-            $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
-        } catch {
-            $ex = $_.Exception
-            $errorResponse = $ex.Response.GetResponseStream()
-            $reader = New-Object System.IO.StreamReader($errorResponse)
-            $reader.BaseStream.Position = 0
-            $reader.DiscardBufferedData()
-            $responseBody = $reader.ReadToEnd();
-            if ($versionPowerShell -ge [version]'5.0') {
-                Write-Information ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
-            } else {
-                Write-Verbose ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
-            }
-            return
-        }
-    }
-}
+#         try {
+#             $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
+#             $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
+#             return (Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value
+#             $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
+#         } catch {
+#             $ex = $_.Exception
+#             $errorResponse = $ex.Response.GetResponseStream()
+#             $reader = New-Object System.IO.StreamReader($errorResponse)
+#             $reader.BaseStream.Position = 0
+#             $reader.DiscardBufferedData()
+#             $responseBody = $reader.ReadToEnd();
+#             if ($versionPowerShell -ge [version]'5.0') {
+#                 Write-Information ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+#             } else {
+#                 Write-Verbose ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+#             }
+#             return
+#         }
+#     }
+# }
 
 function Get-GroupPolicyBasedDeviceConfigurationProfileDefinitionValueExpandedPresentationValues {
     <#
