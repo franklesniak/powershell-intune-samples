@@ -1100,6 +1100,8 @@ if ($versionPowerShell -lt [version]'3.0') {
 }
 #endregion Quit if PowerShell version is very old #####################################
 
+# TODO: Check for script execution policy and quit if set to Restricted
+
 #region Check for required PowerShell modules based on Graph API approach ##########
 if ($boolUseGraphAPIModule -eq $true) {
     # Using Graph API Module approach
