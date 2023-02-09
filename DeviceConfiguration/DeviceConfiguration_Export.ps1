@@ -420,7 +420,7 @@ function Get-GroupPolicyBasedDeviceConfigurationProfile {
     Win10+ - Templates - Administrative Templates
     Win10+ - Templates - Imported Administrative Templates
     .EXAMPLE
-    Get-TemplateBasedDeviceConfigurationProfile
+    Get-GroupPolicyBasedDeviceConfigurationProfile
     Returns any device configuration profiles configured in Intune
     .NOTES
     This function does not retrieve the following device configuration profiles (note:
@@ -949,6 +949,150 @@ function Get-TemplateBasedDeviceConfigurationProfile {
 
         try {
             $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
+            $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
+            $arrTemplateBasedDeviceConfigurationProfiles = @((Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value)
+            $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
+        } catch {
+            $ex = $_.Exception
+            $errorResponse = $ex.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($errorResponse)
+            $reader.BaseStream.Position = 0
+            $reader.DiscardBufferedData()
+            $responseBody = $reader.ReadToEnd();
+            if ($versionPowerShell -ge [version]'5.0') {
+                Write-Information ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+                # TODO: Expand this error message to account for possible errors with decypting the secret
+            } else {
+                Write-Verbose ('Request to ' + $strURI + ' failed with HTTP Status ' + $ex.Response.StatusCode + ' ' + $ex.Response.StatusDescription + ' - the response content was: ' + "`n" + $responseBody)
+                # TODO: Expand this error message to account for possible errors with decypting the secret
+            }
+            $arrTemplateBasedDeviceConfigurationProfiles = @()
+        }
+
+        # Some settings return their values encrypted, which is denoted by the
+        # isEncrypted property being set to true. So, we need to find any encrypted
+        # settings and decrypt them.
+        $intNumberOfElementsA = $arrTemplateBasedDeviceConfigurationProfiles.Count
+        for ($intCounterA = 0; $intCounterA -lt $intNumberOfElementsA; $intCounterA++) {
+            $strDeviceConfigurationProfileID = ($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).id
+            if ($null -ne (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings)) {
+                # the omaSettings property is present
+                if (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings.GetType().FullName.Contains('[]')) {
+                    # omaSettings is an array
+                    $intNumberOfElementsB = @(($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings).Count
+                    for ($intCounterB = 0; $intCounterB -lt $intNumberOfElementsB; $intCounterB++) {
+                        if ($null -ne (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings[$intCounterB]).isEncrypted) {
+                            # the isEncrypted property is present
+                            if ((($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings[$intCounterB]).isEncrypted -eq $true) {
+                                # the isEncrypted property is set to true
+                                $strSecretID = (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings[$intCounterB]).secretReferenceValueId
+                                $strDecryptedValue = Get-DeviceConfigurationProfileOMASettingPlainTextValueForSecretID -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -SecretID $strSecretID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST
+                                (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings[$intCounterB]).value = $strDecryptedValue
+                                (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings[$intCounterB]).PSObject.Properties.Remove('secretReferenceValueId')
+                                # TODO: Validate that upon import, the destination tenant encrypts this value. If not, then we need to remove the isEncrypted property
+                                (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings[$intCounterB]).isEncrypted = $false
+                            }
+                        }
+                    }
+                } else {
+                    # omaSettings is not an array
+                    if ($null -ne (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings).isEncrypted) {
+                        # the isEncrypted property is present
+                        if ((($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings).isEncrypted -eq $true) {
+                            # the isEncrypted property is set to true
+                            $strSecretID = (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings).secretReferenceValueId
+                            $strDecryptedValue = Get-DeviceConfigurationProfileOMASettingPlainTextValueForSecretID -DeviceConfigurationProfileID $strDeviceConfigurationProfileID -SecretID $strSecretID -UseGraphAPIModule:$UseGraphAPIModule -UseGraphAPIREST:$UseGraphAPIREST
+                            (($arrTemplateBasedDeviceConfigurationProfiles[$intCounterA]).omaSettings).value = $strDecryptedValue
+                        }
+                    }
+                }
+            }
+        }
+
+        return $arrTemplateBasedDeviceConfigurationProfiles
+    }
+}
+
+function Get-DeviceConfigurationProfileOMASettingPlainTextValueForSecretID {
+    <#
+    .SYNOPSIS
+    This function is used to convert a secret ID into its plain text value using the Graph API. Some device configuration profiles (template-based ones, in particular) return data that is encrypted, and this function is used to decrypt it.
+    .DESCRIPTION
+    The function connects to the Graph API interface and decrypts the secret specified by SecretID, returning its plain text value.
+    The use of these secrets has been observed with template-based device configuration profiles, but they may be used for other types of profiles, too.
+    A non-exhaustive list of the device configuration profiles that may need to use this function are:
+    macOS - Templates - Custom
+    macOS - Templates - Device Features
+    macOS - Templates - Device Restrictions
+    macOS - Templates - Endpoint Protection
+    macOS - Templates - Extensions
+    macOS - Templates - PKCS Certificate
+    macOS - Templates - PKCS Imported Certificate
+    macOS - Templates - Preference File
+    macOS - Templates - SCEP Certificate
+    macOS - Templates - Trusted Certificate
+    macOS - Templates - VPN
+    macOS - Templates - Wi-Fi
+    macOS - Templates - Wired Network
+    Win10+ - Templates - Custom
+    Win10+ - Templates - Delivery Optimization
+    Win10+ - Templates - Device Firmware Configuration Interface
+    Win10+ - Templates - Device Restrictions
+    Win10+ - Templates - Device Restrictions (Win10 Team)
+    Win10+ - Templates - Domain Join
+    Win10+ - Templates - Edition Upgrade and Mode Switch
+    Win10+ - Templates - Email
+    Win10+ - Templates - Endpoint Protection
+    Win10+ - Templates - Identity Protection
+    Win10+ - Templates - Kiosk
+    Win10+ - Templates - MS Defender for Endpoint
+    Win10+ - Templates - Network Boundary
+    Win10+ - Templates - PKCS Certificate
+    Win10+ - Templates - PKCS Imported Certificate
+    Win10+ - Templates - SCEP Certificate
+    Win10+ - Templates - Secure Assessment (Education)
+    Win10+ - Templates - Shared Multi-User Device
+    Win10+ - Templates - Trusted Certificate
+    Win10+ - Templates - VPN
+    Win10+ - Templates - Wi-Fi
+    Win10+ - Templates - Windows Health Monitoring
+    Win10+ - Templates - Wired Network
+    Win8.1+ - Device Restriction
+    Win8.1+ - SCEP Certificate
+    Win8.1+ - Trusted Certificate
+    Win8.1+ - VPN
+    Win8.1+ - Wi-Fi
+    .EXAMPLE
+    Get-DeviceConfigurationProfileOMASettingPlainTextValueForSecretID -DeviceConfigurationProfileID '8527aa2c-9b99-44e5-b91a-352034551760' -SecretID '14e3052b-2a8b-428f-99bd-c060cdea094b_bfe6e995-90cf-4652-bde4-7d40edb807f2_bdf19a8d-bdfa-49ac-9ed9-e07a5fdebf12'
+    Returns the plain text value associated with the secret ID 14e3052b-2a8b-428f-99bd-c060cdea094b_bfe6e995-90cf-4652-bde4-7d40edb807f2_bdf19a8d-bdfa-49ac-9ed9-e07a5fdebf12 for the device configuration profile with ID 8527aa2c-9b99-44e5-b91a-352034551760.
+    #>
+
+    [cmdletbinding()]
+    param (
+        [Parameter(Mandatory = $false)][Switch]$UseGraphAPIModule,
+        [Parameter(Mandatory = $false)][Switch]$UseGraphAPIREST,
+        [Parameter(Mandatory = $true)][string]$DeviceConfigurationProfileID,
+        [Parameter(Mandatory = $true)][string]$SecretID
+    )
+
+    if (($UseGraphAPIModule.IsPresent) -or ($UseGraphAPIREST.IsPresent -eq $false)) {
+        # Either the user specified to use the Graph API Module or the user did not specify
+        # to use the Graph API REST interface
+        $boolUseGraphAPIModule = $true
+    } else {
+        $boolUseGraphAPIModule = $false
+    }
+
+    if ($boolUseGraphAPIModule) {
+        #TODO: Using the Graph API Module approach
+    } else {
+        # Using the Graph API REST approach
+        $strGraphAPIVersion = 'beta'
+        $strDCPResource = 'deviceManagement/deviceConfigurations'
+
+        try {
+            $strURI = 'https://graph.microsoft.com/' + $strGraphAPIVersion + '/' + $strDCPResource
+            $strURI += '/' + $DeviceConfigurationProfileID + '/getOmaSettingPlainTextValue(secretReferenceValueID=' + "'" + $SecretID + "'" + ')'
             $VerbosePreference = [System.Management.Automation.ActionPreference]::SilentlyContinue
             return (Invoke-RestMethod -Uri $strURI -Headers $global:hashtableAuthToken -Method Get).Value
             $VerbosePreference = $script:VerbosePreferenceAtStartOfScript
